@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@300;400;500;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.2/dist/sql-wasm.js"></script>
+<style>
+  body{margin:0}
+  *{box-sizing:border-box}
+  @keyframes sfpop{0%{transform:scale(.85);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+  @keyframes sfglow{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.35)}50%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}
+  @keyframes sfrise{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  ::-webkit-scrollbar{height:8px;width:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(128,128,128,.4);border-radius:8px}
+  ::selection{background:rgba(245,158,11,.32)}
+</style>
+</helmet>
+<div data-screen-label="SpeakFlow" style="{{ rootStyle }}">
+
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Home" style="max-width:1000px;margin:0 auto;padding:clamp(24px,5vw,64px) clamp(18px,4vw,32px)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <div style="width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#f59e0b,#f97316);font-size:22px;box-shadow:0 8px 22px -6px rgba(245,158,11,.6)">⚡</div>
+        <div style="font-family:'Fredoka';font-weight:700;font-size:26px;letter-spacing:-.5px;color:var(--tx)">SpeakFlow</div>
+        <span style="{{ dbBadgeStyle }}">{{ dbBadge }}</span>
+        <button onClick="{{ toggleTheme }}" title="Theme" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;display:grid;place-items:center" style-hover="background:var(--hover)">{{ themeIcon }}</button>
+        <button onClick="{{ openSettings }}" title="Pronunciation API settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
+      </div>
+      <h1 style="font-family:'Fredoka';font-weight:600;font-size:clamp(28px,5vw,44px);line-height:1.1;margin:14px 0 6px;max-width:18ch;color:var(--tx)">Speak English by <span style="color:var(--head)">expanding ideas</span></h1>
+      <p style="margin:0 0 24px;color:var(--dim);font-size:clamp(15px,2.4vw,18px)">Nói tiếng Anh bằng cách mở rộng câu từng bước · 5W1H &amp; PREP</p>
+
+      <div style="display:flex;align-items:center;gap:10px;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);border-radius:15px;padding:0 14px;margin-bottom:26px;max-width:460px">
+        <span style="font-size:17px;opacity:.55">🔎</span>
+        <input value="{{ query }}" onInput="{{ onSearch }}" placeholder="Search lessons · Tìm bài học, lĩnh vực…" style="flex:1;border:none;outline:none;background:transparent;color:var(--tx);font-family:'Lexend';font-size:15px;padding:13px 0" />
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ clearSearch }}" title="Clear" style="cursor:pointer;border:none;background:var(--nbg);color:var(--tx);width:24px;height:24px;border-radius:50%;font-size:13px;display:grid;place-items:center">✕</button>
+        </sc-if>
+      </div>
+
+      <sc-for list="{{ groups }}" as="group" hint-placeholder-count="2">
+        <div style="margin-bottom:30px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <span style="font-size:20px">{{ group.icon }}</span>
+            <div style="min-width:0">
+              <div style="font-family:'Fredoka';font-weight:600;font-size:16px;color:var(--tx);line-height:1.2;white-space:nowrap">{{ group.en }}</div>
+              <div style="font-size:12px;color:var(--faint);white-space:nowrap">{{ group.vi }}</div>
+            </div>
+            <span style="font-family:'Roboto Mono',monospace;font-size:11px;color:var(--faint);background:var(--nbg);border:1px solid var(--nbd);padding:3px 8px;border-radius:7px;white-space:nowrap;flex:0 0 auto">{{ group.count }}</span>
+            <div style="flex:1;height:1px;background:var(--hair)"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
+            <sc-for list="{{ group.lessons }}" as="lesson" hint-placeholder-count="3">
+              <button onClick="{{ lesson.start }}" style="text-align:left;cursor:pointer;border:1px solid var(--card-bd);background:var(--card-bg);box-shadow:var(--card-sh);border-radius:20px;padding:20px;color:var(--tx);font-family:'Lexend';display:flex;flex-direction:column;gap:10px;min-height:158px;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease" style-hover="transform:translateY(-3px);border-color:rgba(128,128,128,.4);box-shadow:0 14px 32px -16px rgba(0,0,0,.5)">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="{{ lesson.badgeStyle }}">{{ lesson.fw }}</span>
+                  <span style="font-size:22px;opacity:.9">{{ lesson.icon }}</span>
+                </div>
+                <div style="font-family:'Fredoka';font-weight:600;font-size:19px;line-height:1.18;margin-top:auto;color:var(--tx)">{{ lesson.title }}</div>
+                <div style="color:var(--dim);font-size:13.5px;line-height:1.3">{{ lesson.titleVi }}</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12.5px;color:var(--faint)">
+                  <span>{{ lesson.stepLabel }}</span><span>·</span><span>{{ lesson.fwVi }}</span>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ group.showPager }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap">
+              <button onClick="{{ group.prev }}" style="{{ group.prevStyle }}" style-hover="background:var(--hover)">‹ Prev</button>
+              <div style="font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums">{{ group.pageLabel }} <span style="color:var(--faint)">· {{ group.rangeLabel }}</span></div>
+              <button onClick="{{ group.next }}" style="{{ group.nextStyle }}" style-hover="background:var(--hover)">Next ›</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:50px 20px;color:var(--dim)">
+          <div style="font-size:40px;margin-bottom:10px;opacity:.6">🔍</div>
+          <div style="font-family:'Fredoka';font-weight:600;font-size:18px;color:var(--tx)">No lessons found</div>
+          <div style="font-size:14px;margin-top:4px">Không tìm thấy bài học cho “{{ query }}”.</div>
+        </div>
+      </sc-if>
+	  
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isPractice }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Practice" style="max-width:880px;margin:0 auto;padding:clamp(18px,3.5vw,30px) clamp(16px,4vw,28px) 130px">
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+        <button onClick="{{ goHome }}" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:8px 13px;font-family:'Lexend';font-size:13.5px;display:flex;align-items:center;gap:6px" style-hover="background:var(--hover)">← <span style="opacity:.75">Lessons</span></button>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Fredoka';font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)">{{ lessonTitle }}</div>
+          <div style="font-size:12.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fieldLabel }}</div>
+        </div>
+        <span style="{{ chipStyle }}">{{ fw }}</span>
+        <button onClick="{{ toggleTheme }}" title="Theme" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center" style-hover="background:var(--hover)">{{ themeIcon }}</button>
+        <button onClick="{{ openSettings }}" title="Pronunciation API settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
+        <button onClick="{{ restart }}" title="Restart" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:17px;display:grid;place-items:center" style-hover="background:var(--hover)">↺</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+        <sc-for list="{{ dots }}" as="dot" hint-placeholder-count="6">
+          <div style="{{ dot.style }}"></div>
+        </sc-for>
+        <span style="margin-left:auto;font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums">{{ stepCounter }}</span>
+      </div>
+
+      <div style="background:var(--panel-bg);border:1px solid var(--panel-bd);box-shadow:var(--card-sh);border-radius:24px;padding:clamp(22px,4vw,34px);margin:14px 0 18px;min-height:184px;display:flex;flex-direction:column;justify-content:flex-start">
+        <div style="font-size:11.5px;letter-spacing:2px;color:var(--faint);font-family:'Fredoka';font-weight:600;margin-bottom:14px">🔁 READ THE FULL SENTENCE ALOUD · ĐỌC TO CẢ CÂU</div>
+        <p style="margin:0;font-size:clamp(22px,4.2vw,36px);line-height:1.85;font-weight:400;letter-spacing:-.2px">
+          <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="3"><span style="{{ seg.wrapStyle }}"><sc-for list="{{ seg.words }}" as="w" hint-placeholder-count="2"><span onClick="{{ w.click }}" title="Tap for pronunciation · IPA" style="{{ w.style }}" style-hover="background:var(--hover)">{{ w.text }}</span></sc-for></span></sc-for>
+        </p>
+      </div>
+
+      <sc-if value="{{ hasLookup }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:sfrise .25s ease;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div style="min-width:0;flex:1">
+            <div style="font-family:'Fredoka';font-weight:600;font-size:16px;color:var(--tx)">{{ lookupWord }}</div>
+            <div style="font-family:'Roboto Mono',monospace;font-size:18px;margin-top:2px;{{ lookupStyle }}">{{ lookupIpa }}</div>
+            <sc-if value="{{ lookupError }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px;color:#ef4444;margin-top:3px">{{ lookupError }}</div>
+            </sc-if>
+          </div>
+          <button onClick="{{ speakLookup }}" title="Listen" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:42px;height:42px;font-size:18px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:var(--hover)">🔊</button>
+          <button onClick="{{ closeLookup }}" title="Close" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:42px;height:42px;font-size:15px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:var(--hover)">✕</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isComplete }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:sfrise .3s ease;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.42);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:11px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <span style="font-size:26px">🎉</span>
+            <div><div style="font-family:'Fredoka';font-weight:600;font-size:17px;color:var(--tx)">Sentence complete!</div><div style="font-size:13px;color:var(--dim)">Hoàn thành câu — đọc lại trọn vẹn một lần nữa nhé.</div></div>
+          </div>
+          <div style="border-top:1px solid rgba(34,197,94,.3);padding-top:11px">
+            <div style="font-size:11px;letter-spacing:1.5px;color:var(--faint);font-family:'Fredoka';font-weight:600;margin-bottom:5px">🇻🇳 NGHĨA CẢ CÂU · FULL MEANING</div>
+            <div style="font-size:16px;line-height:1.55;color:var(--tx)">{{ fullVi }}</div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showPrompt }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;padding:0 4px">
+          <span style="{{ promptDot }}"></span>
+          <div><div style="font-size:14px;color:var(--tx)"><span style="color:var(--dim)">Now reading · </span><b style="font-family:'Fredoka'">{{ currentLabel }}</b> <span style="color:var(--dim)">{{ currentLabelVi }}</span></div><div style="font-size:13px;color:var(--dim);font-style:italic">{{ currentVi }}</div></div>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:10px;overflow-x:auto;padding:4px 2px 12px;margin-bottom:6px">
+        <sc-for list="{{ blocks }}" as="block" hint-placeholder-count="6">
+          <div style="{{ block.style }}">
+            <div style="display:flex;align-items:center;gap:6px"><span style="{{ block.iconStyle }}">{{ block.icon }}</span><span style="font-family:'Fredoka';font-weight:600;font-size:13px;letter-spacing:.5px">{{ block.label }}</span></div>
+            <div style="font-size:11px;opacity:.72;margin-top:2px">{{ block.labelVi }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="position:fixed;left:0;right:0;bottom:0;background:var(--footer);padding:18px clamp(16px,4vw,28px) 22px">
+        <div style="max-width:880px;margin:0 auto;display:flex;gap:12px;align-items:center">
+          <button onClick="{{ speakNow }}" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:16px;padding:14px 18px;font-family:'Fredoka';font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px" style-hover="background:var(--hover)">🔊 <span>Listen</span></button>
+          <button onClick="{{ toggleAuto }}" title="Auto play" style="{{ autoBtnStyle }}">{{ autoLabel }}</button>
+          <button onClick="{{ advance }}" style="{{ nextBtnStyle }}" style-hover="filter:brightness(1.06)">{{ nextLabel }}</button>
+        </div>
+        <div style="max-width:880px;margin:8px auto 0;text-align:center;font-size:11.5px;color:var(--faint)">Press <b style="color:var(--dim)">Space</b> or <b style="color:var(--dim)">Enter</b> to expand · Phím tắt mở rộng câu</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSettings }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:50">
+      <div onClick="{{ stop }}" style="width:100%;max-width:440px;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:0 24px 60px -20px rgba(0,0,0,.6);border-radius:22px;padding:24px;color:var(--tx);font-family:'Lexend'">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="font-size:22px">🔡</span>
+          <div style="font-family:'Fredoka';font-weight:600;font-size:19px">Pronunciation lookup</div>
+          <button onClick="{{ closeSettings }}" title="Close" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:10px;width:34px;height:34px;font-size:14px;display:grid;place-items:center" style-hover="background:var(--hover)">✕</button>
+        </div>
+        <p style="margin:0 0 18px;font-size:13px;color:var(--dim);line-height:1.5">Tap any word in a sentence to hear it and see its IPA. Configure an OpenAI-compatible LLM endpoint below. Chạm vào từ để tra IPA.</p>
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">API BASE URL</label>
+        <input value="{{ llmBaseUrl }}" onInput="{{ setLlmBase }}" placeholder="https://api.openai.com/v1" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">API KEY</label>
+        <input value="{{ llmApiKey }}" onInput="{{ setLlmKey }}" type="password" placeholder="sk-…" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">MODEL</label>
+        <input value="{{ llmModel }}" onInput="{{ setLlmModel }}" placeholder="gpt-4o-mini" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:16px" />
+
+        <div style="font-size:12px;color:var(--faint);line-height:1.5;margin-bottom:18px">Saved locally in your browser. Leave blank to use the built-in assistant when available.</div>
+        <button onClick="{{ closeSettings }}" style="width:100%;cursor:pointer;border:none;border-radius:14px;padding:13px;font-family:'Fredoka';font-weight:700;font-size:15px;color:#0a0a0b;background:linear-gradient(135deg,#f59e0b,#f97316)" style-hover="filter:brightness(1.05)">Done</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:880,&quot;height&quot;:680},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#f59e0b&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showVietnamese&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;autoSpeak&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const SQLJS = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.2/dist/';
+const SCHEMA_SQL = `CREATE TABLE IF NOT EXISTS lesson(id INTEGER PRIMARY KEY, field TEXT, framework TEXT, icon TEXT, title TEXT, title_vi TEXT, ord INTEGER);
+CREATE TABLE IF NOT EXISTS phrase(id INTEGER PRIMARY KEY, lesson_id INTEGER, ord INTEGER, label TEXT, label_vi TEXT, color TEXT, text TEXT, vi TEXT);`;
+
+const FIELDS = [
+  { key: 'dev', icon: '💻', en: 'Software Development', vi: 'Lập trình & Phần mềm' },
+  { key: 'business', icon: '📊', en: 'Business & Office', vi: 'Kinh doanh & Văn phòng' },
+  { key: 'healthcare', icon: '🏥', en: 'Healthcare', vi: 'Y tế & Chăm sóc' },
+  { key: 'education', icon: '🎓', en: 'Education', vi: 'Giáo dục' },
+];
+
+const TOKENS = {
+  dark: {
+    rootBg: 'radial-gradient(1200px 600px at 80% -10%, #1c1206 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #0b1320 0%, transparent 55%), #0b0b0c',
+    text: '#f4f4f6', dim: 'rgba(255,255,255,.62)', faint: 'rgba(255,255,255,.45)', hair: 'rgba(255,255,255,.08)',
+    cardBg: 'linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02))', cardBd: 'rgba(255,255,255,.1)', cardSh: 'none',
+    panelBg: 'linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018))', panelBd: 'rgba(255,255,255,.1)',
+    nbg: 'rgba(255,255,255,.04)', nbd: 'rgba(255,255,255,.15)', cur: '#ffcf6b',
+    pendBg: 'rgba(255,255,255,.03)', pendBd: 'rgba(255,255,255,.09)', pendTx: 'rgba(255,255,255,.34)',
+    footer: 'linear-gradient(0deg,rgba(11,11,12,.97) 55%,transparent)', head: '#fbbf24', hover: 'rgba(255,255,255,.13)',
+    fadeRGB: '255,255,255',
+  },
+  light: {
+    rootBg: 'radial-gradient(1200px 600px at 80% -10%, #fde9d2 0%, transparent 60%), radial-gradient(900px 500px at -10% 110%, #dfeaf6 0%, transparent 55%), #f7f4ee',
+    text: '#1d1b18', dim: 'rgba(0,0,0,.6)', faint: 'rgba(0,0,0,.42)', hair: 'rgba(0,0,0,.1)',
+    cardBg: '#ffffff', cardBd: 'rgba(0,0,0,.1)', cardSh: '0 1px 3px rgba(0,0,0,.08)',
+    panelBg: '#ffffff', panelBd: 'rgba(0,0,0,.1)',
+    nbg: 'rgba(0,0,0,.04)', nbd: 'rgba(0,0,0,.15)', cur: '#b45309',
+    pendBg: 'rgba(0,0,0,.03)', pendBd: 'rgba(0,0,0,.1)', pendTx: 'rgba(0,0,0,.4)',
+    footer: 'linear-gradient(0deg,rgba(247,244,238,.98) 55%,transparent)', head: '#d97706', hover: 'rgba(0,0,0,.07)',
+    fadeRGB: '0,0,0',
+  },
+};
+
+class Component extends DCLogic {
+  state = { screen: 'home', lessonIndex: 0, revealed: 1, dbLessons: null, dbReady: false, dbSource: 'json', auto: null, theme: null, query: '', pages: {}, lookup: null, showSettings: false, ipaCache: {}, llm: { baseUrl: '', apiKey: '', model: '' } };
+
+  componentDidMount() {
+    try { const raw = localStorage.getItem('sf_llm_cfg'); if (raw) this.setState({ llm: { baseUrl: '', apiKey: '', model: '', ...JSON.parse(raw) } }); } catch (e) {}
+    this._onKey = (e) => {
+      if (this.state.screen !== 'practice') return;
+      if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); this.advance(); }
+    };
+    window.addEventListener('keydown', this._onKey);
+    this.loadDB();
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._onKey); try { speechSynthesis.cancel(); } catch (e) {} }
+
+  waitFor(fn, ms) {
+    return new Promise((res, rej) => { const t0 = Date.now(); const tick = () => { const v = fn(); if (v) return res(v); if (Date.now() - t0 > ms) return rej(new Error('timeout')); setTimeout(tick, 60); }; tick(); });
+  }
+  async getSQL() { const initSqlJs = await this.waitFor(() => window.initSqlJs, 9000); return initSqlJs({ locateFile: f => SQLJS + f }); }
+  async loadDB() {
+    try {
+      const SQL = await this.getSQL();
+      const buf = await fetch('lessons.db').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
+      const db = new SQL.Database(new Uint8Array(buf));
+      const lessons = this.queryLessons(db);
+      if (!lessons.length) throw new Error('empty db');
+      this.db = db; this.setState({ dbLessons: lessons, dbReady: true, dbSource: 'file' }); return;
+    } catch (e) { console.warn('lessons.db load failed:', e && e.message); }
+    try {
+      const SQL = await this.getSQL();
+      const db = this.buildFromSeed(SQL);
+      this.db = db; this.setState({ dbLessons: this.queryLessons(db), dbReady: true, dbSource: 'memory' });
+    } catch (e2) { console.warn('SQLite unavailable, using JS fallback:', e2 && e2.message); this.setState({ dbLessons: LESSONS, dbReady: false, dbSource: 'json' }); }
+  }
+  buildFromSeed(SQL) {
+    const db = new SQL.Database(); db.run(SCHEMA_SQL);
+    const insL = db.prepare('INSERT INTO lesson (id,field,framework,icon,title,title_vi,ord) VALUES (?,?,?,?,?,?,?)');
+    const insP = db.prepare('INSERT INTO phrase (lesson_id,ord,label,label_vi,color,text,vi) VALUES (?,?,?,?,?,?,?)');
+    LESSONS.forEach((ls, li) => { insL.run([li + 1, ls.field, ls.fw, ls.icon, ls.title, ls.titleVi, li]); ls.steps.forEach((st, si) => insP.run([li + 1, si, st.label, st.labelVi, st.color, st.text, st.vi])); });
+    insL.free(); insP.free(); return db;
+  }
+  queryLessons(db) {
+    const lr = db.exec('SELECT id,field,framework,icon,title,title_vi FROM lesson ORDER BY ord')[0];
+    if (!lr) return [];
+    // bulk-load all phrases once, then group by lesson_id (fast for thousands of rows)
+    const byLesson = {};
+    const pr = db.exec('SELECT lesson_id,label,label_vi,color,text,vi FROM phrase ORDER BY lesson_id,ord')[0];
+    if (pr) for (const [lid, label, labelVi, color, text, vi] of pr.values) { (byLesson[lid] || (byLesson[lid] = [])).push({ label, labelVi, color, text, vi }); }
+    return lr.values.map(([id, field, fw, icon, title, titleVi]) => ({ field, fw, icon, title, titleVi, steps: byLesson[id] || [] }));
+  }
+  data() { return this.state.dbLessons || LESSONS; }
+
+  rgba(hex, a) { const n = parseInt(hex.replace('#', ''), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
+  themeNow() { return this.state.theme ?? this.props.theme ?? 'light'; }
+  toggleTheme() { this.setState({ theme: this.themeNow() === 'dark' ? 'light' : 'dark' }); }
+  onSearch(e) { this.setState({ query: e.target.value, pages: {} }); }
+  clearSearch() { this.setState({ query: '', pages: {} }); }
+  setPage(field, p) { this.setState(s => ({ pages: { ...(s.pages || {}), [field]: p } })); }
+
+  startLesson(i) { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'practice', lessonIndex: i, revealed: 1 }, () => this.maybeSpeak()); }
+  goHome() { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'home' }); }
+  restart() { this.setState({ revealed: 1 }, () => this.maybeSpeak()); }
+  advance() {
+    const lesson = this.data()[this.state.lessonIndex];
+    if (this.state.revealed < lesson.steps.length) this.setState(s => ({ revealed: s.revealed + 1 }), () => this.maybeSpeak());
+    else this.startLesson((this.state.lessonIndex + 1) % this.data().length);
+  }
+  toggleAuto() { this.setState(s => ({ auto: s.auto === null ? !(this.props.autoSpeak ?? true) : !s.auto })); }
+  autoOn() { return this.state.auto === null ? (this.props.autoSpeak ?? true) : this.state.auto; }
+
+  pickVoice() { try { const vs = speechSynthesis.getVoices() || []; return vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch (e) { return null; } }
+  speak(text) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.95; const v = this.pickVoice(); if (v) u.voice = v; speechSynthesis.speak(u); } catch (e) {} }
+  currentText() { const l = this.data()[this.state.lessonIndex]; return l.steps.slice(0, this.state.revealed).map(s => s.text).join(' '); }
+  speakNow() { this.speak(this.currentText()); }
+  maybeSpeak() { if (this.autoOn()) this.speak(this.currentText()); }
+
+  // ---- LLM pronunciation (IPA) lookup ----
+  openSettings() { this.setState({ showSettings: true }); }
+  closeSettings() { this.setState({ showSettings: false }); }
+  setLlm(key, val) { this.setState(s => { const llm = { ...s.llm, [key]: val }; try { localStorage.setItem('sf_llm_cfg', JSON.stringify(llm)); } catch (e) {} return { llm }; }); }
+  closeLookup() { this.setState({ lookup: null }); }
+  cleanIPA(s) { s = (s || '').trim(); const m = s.match(/\/[^\/\n]+\//); if (m) return m[0]; s = s.replace(/^["'`\s]+|["'`\s]+$/g, ''); return s.startsWith('/') ? s : '/' + s.replace(/^\/|\/$/g, '') + '/'; }
+  async fetchIPA(word) {
+    const prompt = 'Give the American English IPA phonetic transcription for: "' + word + '". Respond with ONLY the IPA between slashes, for example /h\u0259\u02c8lo\u028a/. No other text, no explanation.';
+    const cfg = this.state.llm || {};
+    if (cfg.baseUrl && cfg.apiKey) {
+      const url = cfg.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey }, body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature: 0, messages: [{ role: 'user', content: prompt }] }) });
+      if (!r.ok) throw new Error('API error ' + r.status);
+      const j = await r.json();
+      return this.cleanIPA((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '');
+    }
+    if (window.claude && window.claude.complete) { return this.cleanIPA(await window.claude.complete(prompt) || ''); }
+    throw new Error('No LLM configured \u2014 open \u2699 Settings');
+  }
+  async lookupIPA(raw) {
+    const word = (raw || '').trim();
+    if (!word) return;
+    this.speak(word);
+    if (this.state.ipaCache[word]) { this.setState({ lookup: { word, ipa: this.state.ipaCache[word], loading: false, error: '' } }); return; }
+    this.setState({ lookup: { word, ipa: '', loading: true, error: '' } });
+    try {
+      const ipa = await this.fetchIPA(word);
+      this.setState(s => ({ ipaCache: { ...s.ipaCache, [word]: ipa }, lookup: { word, ipa, loading: false, error: '' } }));
+    } catch (e) {
+      this.setState({ lookup: { word, ipa: '', loading: false, error: (e && e.message) || 'Lookup failed' } });
+    }
+  }
+
+  renderVals() {
+    const accent = this.props.accentColor ?? '#f59e0b';
+    const showVi = this.props.showVietnamese ?? true;
+    const dark = this.themeNow() === 'dark';
+    const c = dark ? TOKENS.dark : TOKENS.light;
+    const D = this.data();
+    const i = Math.min(this.state.lessonIndex, D.length - 1);
+    const lesson = D[i];
+    const rev = this.state.revealed;
+    const total = lesson.steps.length;
+    const complete = rev >= total;
+    const fwMeta = (fw) => fw === '5W1H' ? { color: '#3b82f6', nameVi: 'Mô tả · Kể · Giải thích' } : { color: '#a855f7', nameVi: 'Quan điểm · Tranh luận' };
+    const fieldOf = (k) => FIELDS.find(f => f.key === k) || { icon: '📁', en: k, vi: k };
+
+    const rootStyle = {
+      minHeight: '100vh', background: c.rootBg, color: 'var(--tx)', fontFamily: "'Lexend',system-ui,sans-serif", WebkitFontSmoothing: 'antialiased', transition: 'background .3s ease,color .3s ease',
+      '--tx': c.text, '--dim': c.dim, '--faint': c.faint, '--hair': c.hair, '--card-bg': c.cardBg, '--card-bd': c.cardBd, '--card-sh': c.cardSh,
+      '--panel-bg': c.panelBg, '--panel-bd': c.panelBd, '--nbg': c.nbg, '--nbd': c.nbd, '--cur': c.cur,
+      '--pend-bg': c.pendBg, '--pend-bd': c.pendBd, '--pend-tx': c.pendTx, '--footer': c.footer, '--head': c.head, '--hover': c.hover,
+    };
+
+    // ---- search + group ----
+    const q = this.state.query.trim().toLowerCase();
+    const cardOf = (ls, idx) => {
+      const m = fwMeta(ls.fw);
+      return { title: ls.title, titleVi: showVi ? ls.titleVi : '', fw: ls.fw, fwVi: m.nameVi, icon: ls.icon, stepLabel: ls.steps.length + ' steps',
+        badgeStyle: { display: 'inline-block', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '12px', letterSpacing: '1px', padding: '4px 10px', borderRadius: '999px', color: m.color, background: this.rgba(m.color, 0.16), border: '1px solid ' + this.rgba(m.color, 0.4) },
+        start: () => this.startLesson(idx) };
+    };
+    const PAGE_SIZE = 12;
+    const navBtn = (enabled) => ({ cursor: enabled ? 'pointer' : 'default', opacity: enabled ? 1 : 0.4, border: '1px solid var(--nbd)', background: 'var(--nbg)', color: 'var(--tx)', borderRadius: '11px', padding: '8px 14px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '13.5px' });
+    const groups = [];
+    FIELDS.forEach(f => {
+      const matches = [];
+      D.forEach((ls, idx) => {
+        if (ls.field !== f.key) return;
+        if (q) {
+          const hay = (ls.title + ' ' + ls.titleVi + ' ' + f.en + ' ' + f.vi + ' ' + ls.fw).toLowerCase();
+          if (!hay.includes(q)) return;
+        }
+        matches.push({ ls, idx });
+      });
+      const total = matches.length;
+      if (!total) return;
+      const pageCount = Math.ceil(total / PAGE_SIZE);
+      const p = Math.min(Math.max(0, (this.state.pages || {})[f.key] || 0), pageCount - 1);
+      const from = p * PAGE_SIZE, to = Math.min(total, from + PAGE_SIZE);
+      const lessons = matches.slice(from, to).map(m => cardOf(m.ls, m.idx));
+      groups.push({ key: f.key, icon: f.icon, en: f.en, vi: f.vi,
+        count: total + (total === 1 ? ' lesson' : ' lessons'),
+        lessons,
+        showPager: pageCount > 1,
+        pageLabel: 'Page ' + (p + 1) + ' / ' + pageCount,
+        rangeLabel: (from + 1) + '–' + to + ' of ' + total,
+        prevStyle: navBtn(p > 0), nextStyle: navBtn(p < pageCount - 1),
+        prev: () => { if (p > 0) this.setPage(f.key, p - 1); },
+        next: () => { if (p < pageCount - 1) this.setPage(f.key, p + 1); } });
+    });
+
+    // ---- each revealed phrase = full-contrast text + a dotted bottom border in its color ----
+    const segments = lesson.steps.slice(0, rev).map((st, idx) => {
+      const isCur = idx === rev - 1;
+      const wrapStyle = { color: isCur ? c.cur : 'var(--tx)', fontWeight: 400, borderBottom: '2.5px dotted ' + st.color, paddingBottom: '3px', marginRight: '0.32em', transition: 'color .25s ease' };
+      const words = st.text.split(/\s+/).filter(Boolean).map(w => ({
+        text: w + ' ',
+        click: () => this.lookupIPA(w.replace(/[.,!?;:"'\u201c\u201d]/g, '')),
+        style: { cursor: 'pointer', borderRadius: '6px', padding: '0 1px', transition: 'background .15s ease' },
+      }));
+      return { wrapStyle, words };
+    });
+    const lk = this.state.lookup;
+    const lookupIpa = lk ? (lk.loading ? '\u2026' : (lk.error ? '' : (lk.ipa || '(no result)'))) : '';
+
+    const dots = lesson.steps.map((st, idx) => {
+      const state = idx < rev - 1 ? 'done' : idx === rev - 1 ? 'current' : 'pending';
+      const base = { height: '7px', borderRadius: '999px', transition: 'all .25s ease' };
+      if (state === 'done') return { style: { ...base, width: '22px', background: st.color } };
+      if (state === 'current') return { style: { ...base, width: '34px', background: accent, boxShadow: '0 0 0 3px ' + this.rgba(accent, 0.22) } };
+      return { style: { ...base, width: '22px', background: c.pendBd } };
+    });
+
+    const blocks = lesson.steps.map((st, idx) => {
+      const state = idx < rev - 1 ? 'done' : idx === rev - 1 ? 'current' : 'pending';
+      const base = { flex: '0 0 auto', minWidth: '108px', borderRadius: '15px', padding: '11px 14px', transition: 'all .25s ease' };
+      let style, icon, iconStyle;
+      if (state === 'done') { style = { ...base, background: this.rgba(st.color, dark ? 0.14 : 0.12), border: '1px solid ' + this.rgba(st.color, 0.42), color: 'var(--tx)' }; icon = '✓'; iconStyle = { color: st.color, fontWeight: 700 }; }
+      else if (state === 'current') { style = { ...base, background: st.color, border: '1px solid ' + st.color, color: '#0a0a0b', animation: 'sfglow 1.8s ease infinite, sfpop .3s ease' }; icon = '▶'; iconStyle = { color: '#0a0a0b' }; }
+      else { style = { ...base, background: 'var(--pend-bg)', border: '1px solid var(--pend-bd)', color: 'var(--pend-tx)' }; icon = '○'; iconStyle = { color: 'var(--pend-tx)' }; }
+      return { label: st.label, labelVi: showVi ? st.labelVi : '', icon, iconStyle, style };
+    });
+
+    const cur = lesson.steps[rev - 1];
+    const auto = this.autoOn();
+    const fld = fieldOf(lesson.field);
+    const srcBadge = this.state.dbSource === 'file' ? '● lessons.db' : this.state.dbSource === 'memory' ? '● SQLite · mem' : '○ JS fallback';
+    const ready = this.state.dbReady;
+    return {
+      rootStyle,
+      isHome: this.state.screen === 'home', isPractice: this.state.screen === 'practice',
+      query: this.state.query, hasQuery: this.state.query.length > 0,
+      groups, noResults: groups.length === 0,
+      themeIcon: dark ? '☀️' : '🌙',
+      dbBadge: srcBadge,
+      dbBadgeStyle: { fontFamily: "'Roboto Mono',monospace", fontSize: '10.5px', letterSpacing: '.3px', padding: '3px 8px', borderRadius: '7px', color: ready ? '#10b981' : c.faint, background: ready ? 'rgba(16,185,129,.13)' : c.nbg, border: '1px solid ' + (ready ? 'rgba(16,185,129,.35)' : c.nbd) },
+      lessonTitle: lesson.title, fieldLabel: fld.icon + ' ' + fld.en + (showVi ? ' · ' + fld.vi : ''), fw: lesson.fw,
+      chipStyle: { flex: '0 0 auto', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '12px', letterSpacing: '1px', padding: '5px 11px', borderRadius: '999px', color: fwMeta(lesson.fw).color, background: this.rgba(fwMeta(lesson.fw).color, 0.16), border: '1px solid ' + this.rgba(fwMeta(lesson.fw).color, 0.4) },
+      dots, segments, blocks,
+      stepCounter: 'Phrase ' + rev + ' / ' + total,
+      fullVi: lesson.steps.map(s => s.vi).join(' '),
+      hasLookup: !!lk, lookupWord: lk ? lk.word : '', lookupIpa,
+      lookupError: lk ? (lk.error || '') : '',
+      lookupStyle: { color: lk && lk.loading ? 'var(--dim)' : 'var(--tx)' },
+      speakLookup: () => { if (lk) this.speak(lk.word); }, closeLookup: () => this.closeLookup(),
+      showSettings: this.state.showSettings, openSettings: () => this.openSettings(), closeSettings: () => this.closeSettings(), stop: (e) => e.stopPropagation(),
+      llmBaseUrl: this.state.llm.baseUrl, llmApiKey: this.state.llm.apiKey, llmModel: this.state.llm.model,
+      setLlmBase: (e) => this.setLlm('baseUrl', e.target.value), setLlmKey: (e) => this.setLlm('apiKey', e.target.value), setLlmModel: (e) => this.setLlm('model', e.target.value),
+      isComplete: complete, showPrompt: !complete,
+      currentLabel: cur ? cur.label : '', currentLabelVi: showVi && cur ? '· ' + cur.labelVi : '', currentVi: showVi && cur ? cur.vi : '',
+      promptDot: { width: '11px', height: '11px', borderRadius: '999px', flex: '0 0 auto', background: cur ? cur.color : accent, boxShadow: '0 0 0 4px ' + this.rgba(cur ? cur.color : accent, 0.2) },
+      nextLabel: complete ? 'Next lesson →' : 'Expand →',
+      nextBtnStyle: { flex: 1, cursor: 'pointer', border: 'none', borderRadius: '16px', padding: '15px 18px', fontFamily: "'Fredoka'", fontWeight: 700, fontSize: '16px', color: '#0a0a0b', background: complete ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,' + accent + ',' + accent + ')', boxShadow: '0 10px 26px -10px ' + this.rgba(complete ? '#22c55e' : accent, 0.7) },
+      autoLabel: auto ? '🔁 Auto' : '⏸ Auto',
+      autoBtnStyle: { cursor: 'pointer', borderRadius: '16px', padding: '14px 16px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '14px', color: auto ? '#0a0a0b' : 'var(--tx)', background: auto ? accent : 'var(--nbg)', border: '1px solid ' + (auto ? accent : 'var(--nbd)') },
+      advance: () => this.advance(), restart: () => this.restart(), goHome: () => this.goHome(),
+      speakNow: () => this.speakNow(), toggleAuto: () => this.toggleAuto(),
+      toggleTheme: () => this.toggleTheme(), onSearch: (e) => this.onSearch(e), clearSearch: () => this.clearSearch(),
+    };
+  }
+}
+
+const LESSONS = [
+  { field:'dev', fw:'5W1H', icon:'🚀', title:'Describe a project', titleVi:'Mô tả một dự án', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'Our team',vi:'Nhóm của chúng tôi'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'is building a mobile banking app',vi:'đang xây dựng một app ngân hàng di động'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'for users across Southeast Asia',vi:'cho người dùng khắp Đông Nam Á'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'with a launch planned for next quarter',vi:'dự kiến ra mắt vào quý sau'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because customers need faster, safer payments',vi:'vì khách hàng cần thanh toán nhanh và an toàn hơn'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'by using a microservices architecture and automated testing',vi:'bằng kiến trúc microservices và kiểm thử tự động'},
+  ]},
+  { field:'dev', fw:'PREP', icon:'💬', title:'Remote work for devs', titleVi:'Làm việc từ xa', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'I believe remote work suits software developers really well',vi:'Tôi tin làm việc từ xa rất hợp với lập trình viên'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because coding requires deep focus and fewer interruptions',vi:'vì lập trình cần tập trung sâu và ít bị gián đoạn'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for example, my last team shipped features faster after going fully remote',vi:'ví dụ, nhóm cũ của tôi ra tính năng nhanh hơn khi remote hoàn toàn'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I would argue flexible remote setups make engineers more productive',vi:'nên tôi cho rằng remote linh hoạt giúp kỹ sư hiệu quả hơn'},
+  ]},
+  { field:'dev', fw:'5W1H', icon:'🐛', title:'A production incident', titleVi:'Một sự cố production', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'Our on-call engineer',vi:'Kỹ sư trực hệ thống của chúng tôi'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'noticed the API was returning 500 errors',vi:'phát hiện API trả về lỗi 500'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'on the payment service in production',vi:'ở dịch vụ thanh toán trên production'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'right after the Friday deployment',vi:'ngay sau lần deploy hôm thứ Sáu'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because a database migration had not finished running',vi:'vì một migration cơ sở dữ liệu chưa chạy xong'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'so we rolled back the release and added a health check',vi:'nên chúng tôi rollback bản phát hành và thêm health check'},
+  ]},
+  { field:'dev', fw:'PREP', icon:'🤖', title:'AI coding assistants', titleVi:'Trợ lý code AI', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'In my opinion, AI coding assistants are changing how we work',vi:'Theo tôi, trợ lý code AI đang thay đổi cách chúng ta làm việc'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because they handle boilerplate and let us focus on design',vi:'vì chúng lo phần code lặp lại để ta tập trung vào thiết kế'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for instance, I now write tests and documentation in half the time',vi:'ví dụ, giờ tôi viết test và tài liệu nhanh gấp đôi'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I think every developer should learn to use them well',vi:'nên tôi nghĩ mọi lập trình viên nên học dùng chúng thật tốt'},
+  ]},
+  { field:'dev', fw:'5W1H', icon:'🧑‍💻', title:'Describe your role', titleVi:'Mô tả công việc của bạn', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'I',vi:'Tôi'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'work as a backend developer',vi:'làm lập trình viên backend'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'at a fintech startup in the city',vi:'tại một startup fintech trong thành phố'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'and I have been there for two years',vi:'và đã làm ở đó hai năm'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because I love solving scalability problems',vi:'vì tôi thích giải các bài toán mở rộng quy mô'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'by designing APIs and optimizing database queries',vi:'bằng cách thiết kế API và tối ưu truy vấn cơ sở dữ liệu'},
+  ]},
+  { field:'dev', fw:'PREP', icon:'🔍', title:'Why code reviews matter', titleVi:'Tại sao cần code review', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'I strongly believe code reviews are essential on any team',vi:'Tôi tin code review là thiết yếu với mọi nhóm'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because they catch bugs early and spread knowledge',vi:'vì giúp bắt lỗi sớm và lan tỏa kiến thức'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for example, a teammate once caught a security flaw in my pull request',vi:'ví dụ, một đồng nghiệp từng phát hiện lỗ hổng bảo mật trong PR của tôi'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I always make time to review my colleagues code carefully',vi:'nên tôi luôn dành thời gian review code của đồng nghiệp cẩn thận'},
+  ]},
+  { field:'business', fw:'5W1H', icon:'📈', title:'Report quarterly results', titleVi:'Báo cáo kết quả quý', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'Our sales team',vi:'Đội kinh doanh của chúng tôi'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'exceeded the revenue target',vi:'đã vượt chỉ tiêu doanh thu'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'in the regional market',vi:'tại thị trường khu vực'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'during the third quarter',vi:'trong quý ba'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because demand grew faster than expected',vi:'vì nhu cầu tăng nhanh hơn dự kiến'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'by launching a new pricing plan',vi:'bằng cách ra mắt gói giá mới'},
+  ]},
+  { field:'business', fw:'PREP', icon:'🗓️', title:'A four-day work week', titleVi:'Tuần làm việc 4 ngày', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'I think companies should seriously consider a four-day work week',vi:'Tôi nghĩ công ty nên cân nhắc nghiêm túc tuần làm việc 4 ngày'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because shorter weeks can boost focus and reduce burnout',vi:'vì tuần ngắn hơn giúp tập trung tốt hơn và giảm kiệt sức'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for example, several firms reported higher output after the change',vi:'ví dụ, nhiều công ty báo cáo năng suất cao hơn sau khi thay đổi'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I believe flexible schedules benefit both staff and employers',vi:'nên tôi tin lịch làm linh hoạt có lợi cho cả nhân viên và doanh nghiệp'},
+  ]},
+  { field:'healthcare', fw:'5W1H', icon:'🩺', title:'Describe a patient case', titleVi:'Mô tả ca bệnh nhân', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'A young patient',vi:'Một bệnh nhân trẻ'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'came in with a high fever',vi:'nhập viện với cơn sốt cao'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'at the emergency department',vi:'tại khoa cấp cứu'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'late on Sunday night',vi:'khuya Chủ nhật'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because the symptoms had worsened quickly',vi:'vì triệu chứng trở nặng nhanh'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'so we ran blood tests and started treatment right away',vi:'nên chúng tôi xét nghiệm máu và điều trị ngay'},
+  ]},
+  { field:'healthcare', fw:'PREP', icon:'💻', title:'Is telemedicine effective?', titleVi:'Khám bệnh từ xa có hiệu quả?', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'In my view, telemedicine is a valuable part of modern care',vi:'Theo tôi, khám từ xa là một phần giá trị của y tế hiện đại'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because it gives patients quick access to doctors',vi:'vì giúp bệnh nhân tiếp cận bác sĩ nhanh chóng'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for instance, my clinic now handles follow-ups by video call',vi:'ví dụ, phòng khám của tôi nay tái khám qua video'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I think it should complement in-person visits',vi:'nên tôi nghĩ nó nên bổ trợ cho khám trực tiếp'},
+  ]},
+  { field:'education', fw:'5W1H', icon:'📚', title:'Describe a lesson plan', titleVi:'Mô tả giáo án', steps:[
+    {label:'WHO',labelVi:'Ai',color:'#f59e0b',text:'I',vi:'Tôi'},
+    {label:'WHAT',labelVi:'Cái gì',color:'#22c55e',text:'prepared an interactive lesson',vi:'đã soạn một tiết học tương tác'},
+    {label:'WHERE',labelVi:'Ở đâu',color:'#06b6d4',text:'for my high school class',vi:'cho lớp cấp ba của tôi'},
+    {label:'WHEN',labelVi:'Khi nào',color:'#3b82f6',text:'ahead of the new semester',vi:'trước thềm học kỳ mới'},
+    {label:'WHY',labelVi:'Tại sao',color:'#a855f7',text:'because students learn better through activities',vi:'vì học sinh học tốt hơn qua hoạt động'},
+    {label:'HOW',labelVi:'Cách nào',color:'#ec4899',text:'by using group tasks and short quizzes',vi:'bằng cách dùng bài tập nhóm và quiz ngắn'},
+  ]},
+  { field:'education', fw:'PREP', icon:'⌨️', title:'Should students learn to code?', titleVi:'Học sinh có nên học lập trình?', steps:[
+    {label:'POINT',labelVi:'Quan điểm',color:'#f59e0b',text:'I strongly believe every student should learn basic coding',vi:'Tôi tin mọi học sinh nên học lập trình cơ bản'},
+    {label:'REASON',labelVi:'Lý do',color:'#22c55e',text:'because it builds problem-solving and logical thinking',vi:'vì nó rèn tư duy giải quyết vấn đề và logic'},
+    {label:'EXAMPLE',labelVi:'Ví dụ',color:'#06b6d4',text:'for example, my students grew more confident after a coding club',vi:'ví dụ, học sinh của tôi tự tin hơn sau câu lạc bộ lập trình'},
+    {label:'POINT',labelVi:'Kết luận',color:'#ec4899',text:'so I think coding belongs in the core curriculum',vi:'nên tôi nghĩ lập trình nên nằm trong chương trình chính'},
+  ]},
+];
+</script>
+</body>
+</html>

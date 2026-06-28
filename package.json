@@ -1,0 +1,12 @@
+{
+  "name": "speakflow",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SpeakFlow — AI Speaking Coach mini (phrase expansion, 5W1H & PREP)",
+  "scripts": {
+    "seed": "node db/seed.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0"
+  }
+}
