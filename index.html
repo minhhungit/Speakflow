@@ -243,9 +243,15 @@ class Component extends DCLogic {
       if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); this.advance(); }
     };
     window.addEventListener('keydown', this._onKey);
+    this._voices = [];
+    this._onVoicesChanged = () => { try { this._voices = speechSynthesis.getVoices() || []; } catch (e) {} };
+    try { speechSynthesis.addEventListener('voiceschanged', this._onVoicesChanged); this._onVoicesChanged(); } catch (e) {}
     this.loadDB();
   }
-  componentWillUnmount() { window.removeEventListener('keydown', this._onKey); try { speechSynthesis.cancel(); } catch (e) {} }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this._onKey);
+    try { speechSynthesis.removeEventListener('voiceschanged', this._onVoicesChanged); speechSynthesis.cancel(); } catch (e) {}
+  }
 
   waitFor(fn, ms) {
     return new Promise((res, rej) => { const t0 = Date.now(); const tick = () => { const v = fn(); if (v) return res(v); if (Date.now() - t0 > ms) return rej(new Error('timeout')); setTimeout(tick, 60); }; tick(); });
@@ -296,7 +302,7 @@ class Component extends DCLogic {
   clearSearch() { this.setState({ query: '', pages: {} }); }
   setPage(field, p) { this.setState(s => ({ pages: { ...(s.pages || {}), [field]: p } })); }
 
-  async startLesson(idx) {
+  startLesson(idx) {
     try { speechSynthesis.cancel(); } catch (e) {}
     const meta = this.data()[idx];
     let steps;
@@ -310,7 +316,7 @@ class Component extends DCLogic {
   }
   goHome() { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'home' }); }
   restart() { this.setState({ revealed: 1 }, () => this.maybeSpeak()); }
-  async pickRandomLesson() {
+  pickRandomLesson() {
     const lessons = this.data();
     if (lessons.length <= 1) return 0;
     if (this.db) {
@@ -323,25 +329,30 @@ class Component extends DCLogic {
     let next; do { next = Math.floor(Math.random() * lessons.length); } while (lessons.length > 1 && next === this.state.lessonIndex);
     return next;
   }
-  async advance() {
+  advance() {
     const lesson = this.state.currentLesson;
     if (!lesson) return;
     if (this.state.revealed < lesson.steps.length) this.setState(s => ({ revealed: s.revealed + 1 }), () => this.maybeSpeak());
-    else this.startLesson(await this.pickRandomLesson());
+    else this.startLesson(this.pickRandomLesson());
   }
   toggleAuto() { this.setState(s => ({ auto: s.auto === null ? !(this.props.autoSpeak ?? true) : !s.auto })); }
   autoOn() { return this.state.auto === null ? (this.props.autoSpeak ?? true) : this.state.auto; }
 
-  pickVoice() { try { const vs = speechSynthesis.getVoices() || []; return vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch (e) { return null; } }
+  pickVoice() {
+    try {
+      const vs = (this._voices && this._voices.length) ? this._voices : (speechSynthesis.getVoices() || []);
+      return vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    } catch (e) { return null; }
+  }
   speak(text) {
+    if (!text) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US'; u.rate = 0.95;
-      const doSpeak = () => { try { speechSynthesis.resume(); } catch (e) {} const v = this.pickVoice(); if (v) u.voice = v; speechSynthesis.speak(u); };
-      const vs = speechSynthesis.getVoices();
-      if (vs && vs.length) { doSpeak(); }
-      else { speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true }); }
+      const v = this.pickVoice();
+      if (v) u.voice = v;
+      speechSynthesis.speak(u);
     } catch (e) {}
   }
   currentText() { const l = this.state.currentLesson; return l ? l.steps.slice(0, this.state.revealed).map(s => s.text).join(' ') : ''; }
