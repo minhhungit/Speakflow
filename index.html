@@ -93,7 +93,7 @@
   </sc-if>
 
   <sc-if value="{{ isPractice }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Practice" style="max-width:880px;margin:0 auto;padding:clamp(18px,3.5vw,30px) clamp(16px,4vw,28px) 130px">
+    <div data-screen-label="Practice" onClick="{{ tapAdvance }}" style="max-width:880px;margin:0 auto;padding:clamp(18px,3.5vw,30px) clamp(16px,4vw,28px) 130px">
 
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
         <button onClick="{{ goHome }}" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:8px 13px;font-family:'Lexend';font-size:13.5px;display:flex;align-items:center;gap:6px" style-hover="background:var(--hover)">← <span style="opacity:.75">Lessons</span></button>
@@ -115,9 +115,8 @@
       </div>
 
       <div style="background:var(--panel-bg);border:1px solid var(--panel-bd);box-shadow:var(--card-sh);border-radius:24px;padding:clamp(22px,4vw,34px);margin:14px 0 18px;min-height:184px;display:flex;flex-direction:column;justify-content:flex-start">
-        <div style="font-size:11.5px;letter-spacing:2px;color:var(--faint);font-family:'Fredoka';font-weight:600;margin-bottom:14px">🔁 READ THE FULL SENTENCE ALOUD · ĐỌC TO CẢ CÂU</div>
         <p style="margin:0;font-size:clamp(22px,4.2vw,36px);line-height:1.85;font-weight:400;letter-spacing:-.2px">
-          <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="3"><span style="{{ seg.wrapStyle }}"><sc-for list="{{ seg.words }}" as="w" hint-placeholder-count="2"><span onClick="{{ w.click }}" title="Tap for pronunciation · IPA" style="{{ w.style }}" style-hover="background:var(--hover)">{{ w.text }}</span></sc-for></span></sc-for>
+          <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="3"><span style="{{ seg.wrapStyle }}"><sc-for list="{{ seg.words }}" as="w" hint-placeholder-count="2"><span onClick="{{ w.click }}" style="{{ w.style }}" style-hover="background:var(--hover)">{{ w.text }}</span></sc-for></span></sc-for>
         </p>
       </div>
 
@@ -169,7 +168,7 @@
           <button onClick="{{ toggleAuto }}" title="Auto play" style="{{ autoBtnStyle }}">{{ autoLabel }}</button>
           <button onClick="{{ advance }}" style="{{ nextBtnStyle }}" style-hover="filter:brightness(1.06)">{{ nextLabel }}</button>
         </div>
-        <div style="max-width:880px;margin:8px auto 0;text-align:center;font-size:11.5px;color:var(--faint)">Press <b style="color:var(--dim)">Space</b> or <b style="color:var(--dim)">Enter</b> to expand · Phím tắt mở rộng câu</div>
+
       </div>
     </div>
   </sc-if>
@@ -182,7 +181,6 @@
           <div style="font-family:'Fredoka';font-weight:600;font-size:19px">Pronunciation lookup</div>
           <button onClick="{{ closeSettings }}" title="Close" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:10px;width:34px;height:34px;font-size:14px;display:grid;place-items:center" style-hover="background:var(--hover)">✕</button>
         </div>
-        <p style="margin:0 0 18px;font-size:13px;color:var(--dim);line-height:1.5">Tap any word in a sentence to hear it and see its IPA. Configure an OpenAI-compatible LLM endpoint below. Chạm vào từ để tra IPA.</p>
 
         <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">API BASE URL</label>
         <input value="{{ llmBaseUrl }}" onInput="{{ setLlmBase }}" placeholder="https://api.openai.com/v1" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
@@ -447,7 +445,7 @@ class Component extends DCLogic {
       const wrapStyle = { color: isCur ? c.cur : 'var(--tx)', fontWeight: 400, borderBottom: '2.5px dotted ' + st.color, paddingBottom: '3px', marginRight: '0.32em', transition: 'color .25s ease' };
       const words = st.text.split(/\s+/).filter(Boolean).map(w => ({
         text: w + ' ',
-        click: () => this.lookupIPA(w.replace(/[.,!?;:"'\u201c\u201d]/g, '')),
+        click: (e) => { e.stopPropagation(); this.lookupIPA(w.replace(/[.,!?;:"'\u201c\u201d]/g, '')); },
         style: { cursor: 'pointer', borderRadius: '6px', padding: '0 1px', transition: 'background .15s ease' },
       }));
       return { wrapStyle, words };
@@ -505,6 +503,7 @@ class Component extends DCLogic {
       nextBtnStyle: { flex: 1, cursor: 'pointer', border: 'none', borderRadius: '16px', padding: '15px 18px', fontFamily: "'Fredoka'", fontWeight: 700, fontSize: '16px', color: '#0a0a0b', background: complete ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,' + accent + ',' + accent + ')', boxShadow: '0 10px 26px -10px ' + this.rgba(complete ? '#22c55e' : accent, 0.7) },
       autoLabel: auto ? '🔁 Auto' : '⏸ Auto',
       autoBtnStyle: { cursor: 'pointer', borderRadius: '16px', padding: '14px 16px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '14px', color: auto ? '#0a0a0b' : 'var(--tx)', background: auto ? accent : 'var(--nbg)', border: '1px solid ' + (auto ? accent : 'var(--nbd)') },
+      tapAdvance: (e) => { if (e.target.closest('button')) return; this.advance(); },
       advance: () => this.advance(), restart: () => this.restart(), goHome: () => this.goHome(),
       speakNow: () => this.speakNow(), toggleAuto: () => this.toggleAuto(),
       toggleTheme: () => this.toggleTheme(), onSearch: (e) => this.onSearch(e), clearSearch: () => this.clearSearch(),
