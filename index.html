@@ -236,7 +236,7 @@ const TOKENS = {
 };
 
 class Component extends DCLogic {
-  state = { screen: 'home', lessonIndex: 0, revealed: 1, dbLessons: null, dbReady: false, dbSource: 'json', auto: null, theme: null, query: '', pages: {}, lookup: null, showSettings: false, ipaCache: {}, llm: { baseUrl: '', apiKey: '', model: '' } };
+  state = { screen: 'home', lessonIndex: 0, revealed: 1, dbLessons: null, dbReady: false, dbSource: 'json', auto: null, theme: null, query: '', pages: {}, lookup: null, showSettings: false, ipaCache: {}, llm: { baseUrl: '', apiKey: '', model: '' }, currentLesson: null };
 
   componentDidMount() {
     try { const raw = localStorage.getItem('sf_llm_cfg'); if (raw) this.setState({ llm: { baseUrl: '', apiKey: '', model: '', ...JSON.parse(raw) } }); } catch (e) {}
@@ -276,13 +276,18 @@ class Component extends DCLogic {
     insL.free(); insP.free(); return db;
   }
   queryLessons(db) {
-    const lr = db.exec('SELECT id,field,framework,icon,title,title_vi FROM lesson ORDER BY ord')[0];
+    const lr = db.exec('SELECT l.id,l.field,l.framework,l.icon,l.title,l.title_vi,(SELECT COUNT(*) FROM phrase WHERE lesson_id=l.id) as sc FROM lesson l ORDER BY l.ord')[0];
     if (!lr) return [];
-    // bulk-load all phrases once, then group by lesson_id (fast for thousands of rows)
-    const byLesson = {};
-    const pr = db.exec('SELECT lesson_id,label,label_vi,color,text,vi FROM phrase ORDER BY lesson_id,ord')[0];
-    if (pr) for (const [lid, label, labelVi, color, text, vi] of pr.values) { (byLesson[lid] || (byLesson[lid] = [])).push({ label, labelVi, color, text, vi }); }
-    return lr.values.map(([id, field, fw, icon, title, titleVi]) => ({ field, fw, icon, title, titleVi, steps: byLesson[id] || [] }));
+    return lr.values.map(([id, field, fw, icon, title, titleVi, sc]) => ({ id, field, fw, icon, title, titleVi, stepCount: sc }));
+  }
+  queryPhrases(db, lessonId) {
+    const pr = db.exec('SELECT label,label_vi,color,text,vi FROM phrase WHERE lesson_id=? ORDER BY ord', [lessonId])[0];
+    if (!pr) return [];
+    return pr.values.map(([label, labelVi, color, text, vi]) => ({ label, labelVi, color, text, vi }));
+  }
+  randomLessonId(db, excludeId) {
+    const r = db.exec('SELECT id FROM lesson WHERE id!=? ORDER BY RANDOM() LIMIT 1', [excludeId])[0];
+    return r ? r.values[0][0] : null;
   }
   data() { return this.state.dbLessons || LESSONS; }
 
@@ -293,20 +298,55 @@ class Component extends DCLogic {
   clearSearch() { this.setState({ query: '', pages: {} }); }
   setPage(field, p) { this.setState(s => ({ pages: { ...(s.pages || {}), [field]: p } })); }
 
-  startLesson(i) { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'practice', lessonIndex: i, revealed: 1 }, () => this.maybeSpeak()); }
+  async startLesson(idx) {
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const meta = this.data()[idx];
+    let steps;
+    if (this.db && meta && meta.id) {
+      steps = this.queryPhrases(this.db, meta.id);
+    } else {
+      steps = (LESSONS[idx] || {}).steps || [];
+    }
+    const currentLesson = Object.assign({}, meta || LESSONS[idx] || {}, { steps });
+    this.setState({ screen: 'practice', lessonIndex: idx, currentLesson, revealed: 1 }, () => this.maybeSpeak());
+  }
   goHome() { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'home' }); }
   restart() { this.setState({ revealed: 1 }, () => this.maybeSpeak()); }
-  advance() {
-    const lesson = this.data()[this.state.lessonIndex];
+  async pickRandomLesson() {
+    const lessons = this.data();
+    if (lessons.length <= 1) return 0;
+    if (this.db) {
+      const meta = lessons[this.state.lessonIndex];
+      if (meta && meta.id) {
+        const newId = this.randomLessonId(this.db, meta.id);
+        if (newId != null) { const newIdx = lessons.findIndex(l => l.id === newId); if (newIdx >= 0) return newIdx; }
+      }
+    }
+    let next; do { next = Math.floor(Math.random() * lessons.length); } while (lessons.length > 1 && next === this.state.lessonIndex);
+    return next;
+  }
+  async advance() {
+    const lesson = this.state.currentLesson;
+    if (!lesson) return;
     if (this.state.revealed < lesson.steps.length) this.setState(s => ({ revealed: s.revealed + 1 }), () => this.maybeSpeak());
-    else this.startLesson((this.state.lessonIndex + 1) % this.data().length);
+    else this.startLesson(await this.pickRandomLesson());
   }
   toggleAuto() { this.setState(s => ({ auto: s.auto === null ? !(this.props.autoSpeak ?? true) : !s.auto })); }
   autoOn() { return this.state.auto === null ? (this.props.autoSpeak ?? true) : this.state.auto; }
 
   pickVoice() { try { const vs = speechSynthesis.getVoices() || []; return vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch (e) { return null; } }
-  speak(text) { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.95; const v = this.pickVoice(); if (v) u.voice = v; speechSynthesis.speak(u); } catch (e) {} }
-  currentText() { const l = this.data()[this.state.lessonIndex]; return l.steps.slice(0, this.state.revealed).map(s => s.text).join(' '); }
+  speak(text) {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = 0.95;
+      const doSpeak = () => { try { speechSynthesis.resume(); } catch (e) {} const v = this.pickVoice(); if (v) u.voice = v; speechSynthesis.speak(u); };
+      const vs = speechSynthesis.getVoices();
+      if (vs && vs.length) { doSpeak(); }
+      else { speechSynthesis.addEventListener('voiceschanged', doSpeak, { once: true }); }
+    } catch (e) {}
+  }
+  currentText() { const l = this.state.currentLesson; return l ? l.steps.slice(0, this.state.revealed).map(s => s.text).join(' ') : ''; }
   speakNow() { this.speak(this.currentText()); }
   maybeSpeak() { if (this.autoOn()) this.speak(this.currentText()); }
 
@@ -349,8 +389,7 @@ class Component extends DCLogic {
     const dark = this.themeNow() === 'dark';
     const c = dark ? TOKENS.dark : TOKENS.light;
     const D = this.data();
-    const i = Math.min(this.state.lessonIndex, D.length - 1);
-    const lesson = D[i];
+    const lesson = this.state.currentLesson || { title: '', field: '', fw: '', steps: [], icon: '' };
     const rev = this.state.revealed;
     const total = lesson.steps.length;
     const complete = rev >= total;
@@ -368,7 +407,7 @@ class Component extends DCLogic {
     const q = this.state.query.trim().toLowerCase();
     const cardOf = (ls, idx) => {
       const m = fwMeta(ls.fw);
-      return { title: ls.title, titleVi: showVi ? ls.titleVi : '', fw: ls.fw, fwVi: m.nameVi, icon: ls.icon, stepLabel: ls.steps.length + ' steps',
+      return { title: ls.title, titleVi: showVi ? ls.titleVi : '', fw: ls.fw, fwVi: m.nameVi, icon: ls.icon, stepLabel: (ls.stepCount != null ? ls.stepCount : (ls.steps ? ls.steps.length : 0)) + ' steps',
         badgeStyle: { display: 'inline-block', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '12px', letterSpacing: '1px', padding: '4px 10px', borderRadius: '999px', color: m.color, background: this.rgba(m.color, 0.16), border: '1px solid ' + this.rgba(m.color, 0.4) },
         start: () => this.startLesson(idx) };
     };
