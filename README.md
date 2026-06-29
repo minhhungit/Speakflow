@@ -5,6 +5,8 @@ Mỗi đoạn (phrase) được gạch chân **dotted theo màu của đoạn** 
 đoạn đang đọc nổi bật bằng màu nhấn. Có **tìm kiếm bài học**, **nhóm theo lĩnh vực nghề nghiệp**,
 **theme sáng/tối**, và **auto-play** đọc cả câu.
 
+<img width="1381" height="1225" alt="image" src="https://github.com/user-attachments/assets/3191af04-9242-4c34-9387-dc642365944f" />
+
 ## Files
 - `index.html` — ứng dụng (mở trực tiếp trong trình duyệt).
 - `lessons.db` — database SQLite chứa toàn bộ bài học (app nạp trực tiếp file này).
