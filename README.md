@@ -1,50 +1,72 @@
-# SpeakFlow — AI Speaking Coach (mini)
+# SpeakFlow — English Speaking Coach
 
-Luyện nói tiếng Anh bằng cách **mở rộng câu từng bước** theo hai framework **5W1H** và **PREP**.
-Mỗi đoạn (phrase) được gạch chân **dotted theo màu của đoạn** để dễ phân biệt từng phần khi câu dài dần;
-đoạn đang đọc nổi bật bằng màu nhấn. Có **tìm kiếm bài học**, **nhóm theo lĩnh vực nghề nghiệp**,
-**theme sáng/tối**, và **auto-play** đọc cả câu.
+Luyện nói tiếng Anh bằng cách **mở rộng câu từng bước** theo hai framework **5W1H** và **PREP**.  
+2 000 bài học · 4 lĩnh vực · tìm kiếm · theme sáng/tối · auto-play · tra từ điển AI · lưu từ vựng.
 
 <img width="1381" height="1225" alt="image" src="https://github.com/user-attachments/assets/3191af04-9242-4c34-9387-dc642365944f" />
 
-## Files
-- `index.html` — ứng dụng (mở trực tiếp trong trình duyệt).
-- `lessons.db` — database SQLite chứa toàn bộ bài học (app nạp trực tiếp file này).
-- `data/lessons.json` — nguồn dữ liệu bài học (source of truth để sinh DB).
-- `db/schema.sql` — định nghĩa bảng SQLite (`lesson`, `phrase`).
-- `db/seed.mjs` — script Node sinh `lessons.db` từ `data/lessons.json`.
-- `package.json` — khai báo phụ thuộc `better-sqlite3`.
-
 ## Cách dùng nhanh
-Mở `index.html` qua một server tĩnh. App `fetch('lessons.db')`, nạp bằng sql.js
-và truy vấn bảng `lesson` / `phrase` để hiển thị (badge xanh `● lessons.db`).
-Nếu không fetch được file (vd mở bằng `file://`), app tự dựng DB SQLite in-memory từ
-dữ liệu seed, rồi cuối cùng mới fallback sang JS.
 
-```bash
-npx serve            # rồi mở http://localhost:3000/SpeakFlow.dc.html
+Mở thẳng `index.html` trong trình duyệt — không cần server.  
+App đọc dữ liệu từ `lessons.js` (đã sinh sẵn, hoạt động với `file://`).
+
+## Files
+
+| File | Mô tả |
+|------|-------|
+| `index.html` | Toàn bộ ứng dụng |
+| `lessons.js` | 2 000 bài học sinh từ `lessons.db` — tải qua `<script>`, không cần fetch |
+| `lessons.db` | SQLite source (dùng khi deploy qua HTTP / GitHub Pages) |
+| `data/lessons.json` | Nguồn dữ liệu gốc (source of truth) |
+| `db/schema.sql` | Schema SQLite |
+| `db/seed.mjs` | Script Node sinh `lessons.db` từ `data/lessons.json` |
+
+## Thứ tự nạp dữ liệu
+
+```
+lessons.js  →  lessons.db (fetch, HTTP only)  →  12-lesson seed (last resort)
 ```
 
-## Sinh lessons.db bằng Node (tuỳ chọn)
+- **`lessons.js`** — ưu tiên 1, hoạt động khi mở file:// hoặc deploy HTTP
+- **`lessons.db`** — ưu tiên 2, chỉ dùng khi không có lessons.js (HTTP/HTTPS only)
+- **12-lesson seed** — fallback cuối, chỉ có 12 bài cứng trong code
+
+## Cập nhật dữ liệu
+
+Khi thêm/sửa bài học trong `data/lessons.json`:
+
 ```bash
+# 1. Sinh lại lessons.db
 npm install
-npm run seed         # -> tạo lessons.db ở thư mục gốc từ data/lessons.json
+npm run seed
+
+# 2. Sinh lại lessons.js từ lessons.db
+python3 -c "
+import sqlite3, json
+conn = sqlite3.connect('lessons.db')
+conn.row_factory = sqlite3.Row
+lessons = conn.execute('SELECT id,field,framework,icon,title,title_vi FROM lesson ORDER BY ord').fetchall()
+phrases = {}
+for r in conn.execute('SELECT lesson_id,label,label_vi,color,text,vi FROM phrase ORDER BY lesson_id,ord'):
+    phrases.setdefault(r['lesson_id'], []).append({'label':r['label'],'labelVi':r['label_vi'],'color':r['color'],'text':r['text'],'vi':r['vi']})
+out = [{'id':l['id'],'field':l['field'],'fw':l['framework'],'icon':l['icon'],'title':l['title'],'titleVi':l['title_vi'],'steps':phrases.get(l['id'],[])} for l in lessons]
+conn.close()
+open('lessons.js','w',encoding='utf-8').write('// Auto-generated from lessons.db — do not edit manually\nwindow.DB_LESSONS = ' + json.dumps(out,ensure_ascii=False,separators=(',',':')) + ';\n')
+print(f'Done: {len(out)} lessons')
+"
 ```
 
 ## Schema
+
 ```
 lesson(id, field, framework, icon, title, title_vi, ord)
 phrase(id, lesson_id, ord, label, label_vi, color, text, vi)
 ```
-`field` = lĩnh vực nghề nghiệp: `dev` | `business` | `healthcare` | `education`
-(app hiển thị icon + tên cho mỗi nhóm). Mỗi nhóm chỉ hiển thị tối đa 24 thẻ —
-dùng ô tìm kiếm để lọc tới bài cần luyện.
 
-## Thêm lesson mới
-1. Thêm một object vào `data/lessons.json` (format: `field`, `fw`, `icon`, `title`, `titleVi`, `steps[]`).
-2. Chạy lại `npm run seed` để cập nhật `lessons.db`.
-3. (Để app dùng ngay khi không có server) thêm tương ứng vào mảng `LESSONS` trong `SpeakFlow.dc.html`.
+`field`: `dev` | `business` | `healthcare` | `education`
 
-## Phát âm
-- App đọc cả câu hiện tại bằng Web Speech API (giọng `en-US`).
-- **Auto-play**: tự đọc lại toàn bộ câu mỗi lần mở rộng (có nút bật/tắt).
+## Phát âm & Tra từ
+
+- **Auto-play**: tự đọc câu mỗi lần mở rộng (Web Speech API, giọng `en-US`)
+- **Tra từ**: click vào từ bất kỳ → AI tra IPA + nghĩa tiếng Việt + định nghĩa (cần cấu hình LLM ở ⚙)
+- **Lưu từ vựng**: nhấn 🔖 khi đang tra → lưu vào localStorage

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./lessons.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -32,7 +33,7 @@
         <div style="font-family:'Fredoka';font-weight:700;font-size:26px;letter-spacing:-.5px;color:var(--tx)">SpeakFlow</div>
         <span style="{{ dbBadgeStyle }}">{{ dbBadge }}</span>
         <button onClick="{{ toggleTheme }}" title="Theme" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;display:grid;place-items:center" style-hover="background:var(--hover)">{{ themeIcon }}</button>
-        <button onClick="{{ openSettings }}" title="Pronunciation API settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
+        <button onClick="{{ openSettings }}" title="Dictionary lookup settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:40px;height:40px;font-size:18px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
       </div>
       <h1 style="font-family:'Fredoka';font-weight:600;font-size:clamp(28px,5vw,44px);line-height:1.1;margin:14px 0 6px;max-width:18ch;color:var(--tx)">Speak English by <span style="color:var(--head)">expanding ideas</span></h1>
       <p style="margin:0 0 24px;color:var(--dim);font-size:clamp(15px,2.4vw,18px)">Nói tiếng Anh bằng cách mở rộng câu từng bước · 5W1H &amp; PREP</p>
@@ -93,7 +94,7 @@
   </sc-if>
 
   <sc-if value="{{ isPractice }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="Practice" onClick="{{ tapAdvance }}" style="max-width:880px;margin:0 auto;padding:clamp(18px,3.5vw,30px) clamp(16px,4vw,28px) 130px">
+    <div data-screen-label="Practice" style="max-width:880px;margin:0 auto;padding:clamp(18px,3.5vw,30px) clamp(16px,4vw,28px) 130px">
 
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
         <button onClick="{{ goHome }}" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:8px 13px;font-family:'Lexend';font-size:13.5px;display:flex;align-items:center;gap:6px" style-hover="background:var(--hover)">← <span style="opacity:.75">Lessons</span></button>
@@ -103,8 +104,13 @@
         </div>
         <span style="{{ chipStyle }}">{{ fw }}</span>
         <button onClick="{{ toggleTheme }}" title="Theme" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center" style-hover="background:var(--hover)">{{ themeIcon }}</button>
-        <button onClick="{{ openSettings }}" title="Pronunciation API settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
+        <button onClick="{{ openSettings }}" title="Dictionary lookup settings" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center" style-hover="background:var(--hover)">⚙</button>
+        <button onClick="{{ toggleVocab }}" title="Saved vocabulary" style="cursor:pointer;border:1px solid var(--nbd);background:{{ vocabCount > 0 ? 'rgba(245,158,11,.15)' : 'var(--nbg)' }};color:{{ vocabCount > 0 ? '#f59e0b' : 'var(--tx)' }};border-radius:12px;width:38px;height:38px;font-size:16px;display:grid;place-items:center;position:relative" style-hover="background:var(--hover)">★</button>
         <button onClick="{{ restart }}" title="Restart" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:17px;display:grid;place-items:center" style-hover="background:var(--hover)">↺</button>
+        <div style="display:flex;border:1px solid var(--nbd);border-radius:12px;overflow:hidden">
+          <button onClick="{{ fontSizeDec }}" title="Decrease font size" style="cursor:pointer;border:none;border-right:1px solid var(--nbd);background:var(--nbg);color:var(--tx);width:34px;height:38px;font-size:13px;font-weight:700;display:grid;place-items:center;font-family:'Fredoka'" style-hover="background:var(--hover)">A−</button>
+          <button onClick="{{ fontSizeInc }}" title="Increase font size" style="cursor:pointer;border:none;background:var(--nbg);color:var(--tx);width:34px;height:38px;font-size:15px;font-weight:700;display:grid;place-items:center;font-family:'Fredoka'" style-hover="background:var(--hover)">A+</button>
+        </div>
       </div>
 
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
@@ -115,22 +121,41 @@
       </div>
 
       <div style="background:var(--panel-bg);border:1px solid var(--panel-bd);box-shadow:var(--card-sh);border-radius:24px;padding:clamp(22px,4vw,34px);margin:14px 0 18px;min-height:184px;display:flex;flex-direction:column;justify-content:flex-start">
-        <p style="margin:0;font-size:clamp(22px,4.2vw,36px);line-height:1.85;font-weight:400;letter-spacing:-.2px">
+        <p style="margin:0;font-size:{{ lessonFontSize }}px;line-height:1.85;font-weight:400;letter-spacing:-.2px;transition:font-size .15s ease">
           <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="3"><span style="{{ seg.wrapStyle }}"><sc-for list="{{ seg.words }}" as="w" hint-placeholder-count="2"><span onClick="{{ w.click }}" style="{{ w.style }}" style-hover="background:var(--hover)">{{ w.text }}</span></sc-for></span></sc-for>
         </p>
       </div>
 
       <sc-if value="{{ hasLookup }}" hint-placeholder-val="{{ false }}">
-        <div style="animation:sfrise .25s ease;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:14px;margin-bottom:14px">
-          <div style="min-width:0;flex:1">
-            <div style="font-family:'Fredoka';font-weight:600;font-size:16px;color:var(--tx)">{{ lookupWord }}</div>
-            <div style="font-family:'Roboto Mono',monospace;font-size:18px;margin-top:2px;{{ lookupStyle }}">{{ lookupIpa }}</div>
-            <sc-if value="{{ lookupError }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:12px;color:#ef4444;margin-top:3px">{{ lookupError }}</div>
-            </sc-if>
+        <div style="animation:sfrise .25s ease;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:var(--card-sh);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="min-width:0;flex:1">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div style="font-family:'Fredoka';font-weight:600;font-size:18px;color:var(--tx)">{{ lookupWord }}</div>
+                <sc-if value="{{ lookupPos }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:11px;color:var(--faint);border:1px solid var(--nbd);padding:2px 8px;border-radius:6px;font-family:'Roboto Mono',monospace;letter-spacing:.3px">{{ lookupPos }}</span>
+                </sc-if>
+              </div>
+              <div style="font-family:'Roboto Mono',monospace;font-size:16px;margin-top:3px;{{ lookupStyle }}">{{ lookupIpa }}</div>
+              <sc-if value="{{ lookupVi }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:14px;color:var(--tx);margin-top:6px;font-weight:500">🇻🇳 {{ lookupVi }}</div>
+              </sc-if>
+              <sc-if value="{{ lookupDef }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12.5px;color:var(--dim);margin-top:5px;line-height:1.55">{{ lookupDef }}</div>
+              </sc-if>
+              <sc-if value="{{ lookupEx }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px;color:var(--faint);margin-top:4px;font-style:italic;line-height:1.5">"{{ lookupEx }}"</div>
+              </sc-if>
+              <sc-if value="{{ lookupError }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px;color:#ef4444;margin-top:4px">{{ lookupError }}</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto">
+              <button onClick="{{ speakLookup }}" title="Listen" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:17px;display:grid;place-items:center" style-hover="background:var(--hover)">🔊</button>
+              <button onClick="{{ saveWord }}" title="{{ lookupSaved ? 'Remove from vocab' : 'Save to vocab' }}" style="cursor:pointer;border:1px solid {{ lookupSaved ? 'rgba(245,158,11,.5)' : 'var(--nbd)' }};background:{{ lookupSaved ? 'rgba(245,158,11,.18)' : 'var(--nbg)' }};color:{{ lookupSaved ? '#f59e0b' : 'var(--tx)' }};border-radius:12px;width:38px;height:38px;font-size:17px;display:grid;place-items:center" style-hover="background:var(--hover)">🔖</button>
+              <button onClick="{{ closeLookup }}" title="Close" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:38px;height:38px;font-size:14px;display:grid;place-items:center" style-hover="background:var(--hover)">✕</button>
+            </div>
           </div>
-          <button onClick="{{ speakLookup }}" title="Listen" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:42px;height:42px;font-size:18px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:var(--hover)">🔊</button>
-          <button onClick="{{ closeLookup }}" title="Close" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;width:42px;height:42px;font-size:15px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:var(--hover)">✕</button>
         </div>
       </sc-if>
 
@@ -155,7 +180,7 @@
 
       <div style="display:flex;gap:10px;overflow-x:auto;padding:4px 2px 12px;margin-bottom:6px">
         <sc-for list="{{ blocks }}" as="block" hint-placeholder-count="6">
-          <div style="{{ block.style }}">
+          <div style="{{ block.style }}" onClick="{{ block.click }}">
             <div style="display:flex;align-items:center;gap:6px"><span style="{{ block.iconStyle }}">{{ block.icon }}</span><span style="font-family:'Fredoka';font-weight:600;font-size:13px;letter-spacing:.5px">{{ block.label }}</span></div>
             <div style="font-size:11px;opacity:.72;margin-top:2px">{{ block.labelVi }}</div>
           </div>
@@ -173,25 +198,76 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ showVocab }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeVocab }}" style="position:fixed;inset:0;z-index:40">
+      <div onClick="{{ stop }}" style="position:absolute;top:0;right:0;bottom:0;width:min(360px,100vw);background:var(--card-bg);border-left:1px solid var(--card-bd);box-shadow:-8px 0 40px -10px rgba(0,0,0,.35);display:flex;flex-direction:column;animation:sfrise .2s ease">
+        <div style="display:flex;align-items:center;gap:10px;padding:18px 18px 14px;border-bottom:1px solid var(--card-bd)">
+          <span style="font-size:20px">🔖</span>
+          <div style="font-family:'Fredoka';font-weight:600;font-size:17px;color:var(--tx)">Từ vựng đã lưu</div>
+          <span style="font-size:12px;color:var(--dim);font-family:'Roboto Mono',monospace;margin-left:2px">{{ vocabCount }}</span>
+          <button onClick="{{ closeVocab }}" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:10px;width:32px;height:32px;font-size:14px;display:grid;place-items:center" style-hover="background:var(--hover)">✕</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+          <sc-if value="{{ !vocabCount }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:40px 20px;color:var(--dim)">
+              <div style="font-size:32px;margin-bottom:8px;opacity:.5">🔖</div>
+              <div style="font-family:'Fredoka';font-weight:600;font-size:15px;color:var(--tx)">Chưa có từ nào</div>
+              <div style="font-size:13px;margin-top:4px">Nhấn 🔖 khi tra từ để lưu</div>
+            </div>
+          </sc-if>
+          <sc-for list="{{ savedWords }}" as="vocab" hint-placeholder-count="4">
+            <div style="background:var(--nbg);border:1px solid var(--nbd);border-radius:13px;padding:11px 13px;display:flex;align-items:flex-start;gap:10px">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                  <div style="font-family:'Fredoka';font-weight:600;font-size:15px;color:var(--tx)">{{ vocab.word }}</div>
+                  <sc-if value="{{ vocab.pos }}" hint-placeholder-val="{{ false }}">
+                    <span style="font-size:10px;color:var(--faint);border:1px solid var(--nbd);padding:1px 6px;border-radius:5px;font-family:'Roboto Mono',monospace">{{ vocab.pos }}</span>
+                  </sc-if>
+                </div>
+                <div style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--dim);margin-top:2px">{{ vocab.ipa }}</div>
+                <sc-if value="{{ vocab.vi }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12px;color:var(--tx);margin-top:3px;font-weight:500">🇻🇳 {{ vocab.vi }}</div>
+                </sc-if>
+                <sc-if value="{{ vocab.def }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.5">{{ vocab.def }}</div>
+                </sc-if>
+              </div>
+              <button onClick="{{ vocab.speak }}" title="Listen" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:9px;width:32px;height:32px;font-size:15px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:var(--hover)">🔊</button>
+              <button onClick="{{ vocab.remove }}" title="Remove" style="cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:#ef4444;border-radius:9px;width:32px;height:32px;font-size:13px;display:grid;place-items:center;flex:0 0 auto" style-hover="background:rgba(239,68,68,.1)">✕</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:rgba(16,185,129,.93);color:#fff;padding:9px 20px;border-radius:14px;font-family:'Fredoka';font-weight:600;font-size:15px;z-index:200;pointer-events:none;white-space:nowrap;animation:sfrise .2s ease;box-shadow:0 6px 24px -8px rgba(16,185,129,.6)">{{ toast }}</div>
+  </sc-if>
+
   <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closeSettings }}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:50">
       <div onClick="{{ stop }}" style="width:100%;max-width:440px;background:var(--card-bg);border:1px solid var(--card-bd);box-shadow:0 24px 60px -20px rgba(0,0,0,.6);border-radius:22px;padding:24px;color:var(--tx);font-family:'Lexend'">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-          <span style="font-size:22px">🔡</span>
-          <div style="font-family:'Fredoka';font-weight:600;font-size:19px">Pronunciation lookup</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:22px">📖</span>
+          <div style="font-family:'Fredoka';font-weight:600;font-size:19px">Dictionary Lookup</div>
           <button onClick="{{ closeSettings }}" title="Close" style="margin-left:auto;cursor:pointer;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:10px;width:34px;height:34px;font-size:14px;display:grid;place-items:center" style-hover="background:var(--hover)">✕</button>
         </div>
+        <div style="font-size:12px;color:var(--faint);background:var(--nbg);border:1px solid var(--nbd);border-radius:10px;padding:10px 12px;margin-bottom:16px;line-height:1.6">LLM provides IPA, Vietnamese meaning, definition &amp; example sentence. Responses cached <b style="color:var(--tx)">7 days</b> in localStorage.</div>
 
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">API BASE URL</label>
-        <input value="{{ llmBaseUrl }}" onInput="{{ setLlmBase }}" placeholder="https://api.openai.com/v1" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">LLM BASE URL</label>
+        <input value="{{ llmBaseUrl }}" onInput="{{ setLlmBase }}" placeholder="https://openrouter.ai/api/v1" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
 
         <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">API KEY</label>
         <input value="{{ llmApiKey }}" onInput="{{ setLlmKey }}" type="password" placeholder="sk-…" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:14px" />
 
         <label style="display:block;font-size:12px;font-weight:600;color:var(--faint);margin-bottom:6px;letter-spacing:.3px">MODEL</label>
-        <input value="{{ llmModel }}" onInput="{{ setLlmModel }}" placeholder="gpt-4o-mini" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:16px" />
+        <input value="{{ llmModel }}" onInput="{{ setLlmModel }}" placeholder="google/gemini-2.5-flash-lite" style="width:100%;border:1px solid var(--nbd);background:var(--nbg);color:var(--tx);border-radius:12px;padding:12px 14px;font-family:'Roboto Mono',monospace;font-size:13px;outline:none;margin-bottom:18px" />
 
-        <div style="font-size:12px;color:var(--faint);line-height:1.5;margin-bottom:18px">Saved locally in your browser. Leave blank to use the built-in assistant when available.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 12px;background:var(--nbg);border:1px solid var(--nbd);border-radius:12px">
+          <div style="font-size:12px;color:var(--dim)">Cached words: <b style="color:var(--tx);font-family:'Roboto Mono',monospace">{{ cacheCount }}</b></div>
+          <button onClick="{{ clearDictCache }}" style="cursor:pointer;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#ef4444;border-radius:9px;padding:5px 12px;font-family:'Fredoka';font-weight:600;font-size:13px" style-hover="background:rgba(239,68,68,.15)">Clear cache</button>
+        </div>
         <button onClick="{{ closeSettings }}" style="width:100%;cursor:pointer;border:none;border-radius:14px;padding:13px;font-family:'Fredoka';font-weight:700;font-size:15px;color:#0a0a0b;background:linear-gradient(135deg,#f59e0b,#f97316)" style-hover="filter:brightness(1.05)">Done</button>
       </div>
     </div>
@@ -234,13 +310,24 @@ const TOKENS = {
 };
 
 class Component extends DCLogic {
-  state = { screen: 'home', lessonIndex: 0, revealed: 1, dbLessons: null, dbReady: false, dbSource: 'json', auto: null, theme: null, query: '', pages: {}, lookup: null, showSettings: false, ipaCache: {}, llm: { baseUrl: '', apiKey: '', model: '' }, currentLesson: null };
+  state = { screen: 'home', lessonIndex: 0, revealed: 1, dbLessons: null, dbReady: false, dbSource: 'json', auto: null, theme: null, query: '', pages: {}, lookup: null, showVocab: false, showSettings: false, toast: null, savedWords: [], llm: { baseUrl: '', apiKey: '', model: '' }, fontSize: 28 };
+  _weights = {};
+  _dictCache = {};
 
   componentDidMount() {
+    this._dictCache = {};
+    try {
+      const raw = localStorage.getItem('sf_dict_cache');
+      if (raw) {
+        const parsed = JSON.parse(raw); const now = Date.now(); const TTL = 7 * 24 * 60 * 60 * 1000;
+        Object.keys(parsed).forEach(k => { if (now - (parsed[k].ts || 0) < TTL) this._dictCache[k] = parsed[k]; });
+      }
+    } catch (_) {}
     try { const raw = localStorage.getItem('sf_llm_cfg'); if (raw) this.setState({ llm: { baseUrl: '', apiKey: '', model: '', ...JSON.parse(raw) } }); } catch (e) {}
+    try { const raw = localStorage.getItem('sf_vocab'); if (raw) this.setState({ savedWords: JSON.parse(raw) }); } catch (e) {}
     this._onKey = (e) => {
       if (this.state.screen !== 'practice') return;
-      if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); this.advance(); }
+      if (e.code === 'Space' || e.code === 'ArrowRight') { e.preventDefault(); this.advance(); }
     };
     window.addEventListener('keydown', this._onKey);
     this._voices = [];
@@ -250,6 +337,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     window.removeEventListener('keydown', this._onKey);
+    clearTimeout(this._toastTimer);
     try { speechSynthesis.removeEventListener('voiceschanged', this._onVoicesChanged); speechSynthesis.cancel(); } catch (e) {}
   }
 
@@ -258,6 +346,10 @@ class Component extends DCLogic {
   }
   async getSQL() { const initSqlJs = await this.waitFor(() => window.initSqlJs, 9000); return initSqlJs({ locateFile: f => SQLJS + f }); }
   async loadDB() {
+    // Priority: 1) lessons.js (works on file://) → 2) lessons.db via fetch (HTTP/HTTPS) → 3) 12-lesson seed (last resort)
+    if (window.DB_LESSONS && window.DB_LESSONS.length) {
+      this.setState({ dbLessons: window.DB_LESSONS, dbReady: false, dbSource: 'js' }); return;
+    }
     try {
       const SQL = await this.getSQL();
       const buf = await fetch('lessons.db').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
@@ -289,11 +381,15 @@ class Component extends DCLogic {
     if (!pr) return [];
     return pr.values.map(([label, labelVi, color, text, vi]) => ({ label, labelVi, color, text, vi }));
   }
-  randomLessonId(db, excludeId) {
-    const r = db.exec('SELECT id FROM lesson WHERE id!=? ORDER BY RANDOM() LIMIT 1', [excludeId])[0];
+  randomLessonId(db, excludeId, field) {
+    const r = db.exec('SELECT id FROM lesson WHERE id!=? AND field=? ORDER BY RANDOM() LIMIT 1', [excludeId, field])[0];
     return r ? r.values[0][0] : null;
   }
   data() { return this.state.dbLessons || LESSONS; }
+  _steps(idx) {
+    if (this.db) { const m = (this.data())[idx]; if (m && m.id) return this.queryPhrases(this.db, m.id); }
+    return ((this.data())[idx] || { steps: [] }).steps;
+  }
 
   rgba(hex, a) { const n = parseInt(hex.replace('#', ''), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
   themeNow() { return this.state.theme ?? this.props.theme ?? 'light'; }
@@ -304,35 +400,27 @@ class Component extends DCLogic {
 
   startLesson(idx) {
     try { speechSynthesis.cancel(); } catch (e) {}
-    const meta = this.data()[idx];
-    let steps;
-    if (this.db && meta && meta.id) {
-      steps = this.queryPhrases(this.db, meta.id);
-    } else {
-      steps = (LESSONS[idx] || {}).steps || [];
-    }
-    const currentLesson = Object.assign({}, meta || LESSONS[idx] || {}, { steps });
-    this.setState({ screen: 'practice', lessonIndex: idx, currentLesson, revealed: 1 }, () => this.maybeSpeak());
+    this.setState({ screen: 'practice', lessonIndex: idx, revealed: 1 }, () => this.maybeSpeak());
   }
   goHome() { try { speechSynthesis.cancel(); } catch (e) {} this.setState({ screen: 'home' }); }
   restart() { this.setState({ revealed: 1 }, () => this.maybeSpeak()); }
   pickRandomLesson() {
     const lessons = this.data();
-    if (lessons.length <= 1) return 0;
-    if (this.db) {
-      const meta = lessons[this.state.lessonIndex];
-      if (meta && meta.id) {
-        const newId = this.randomLessonId(this.db, meta.id);
-        if (newId != null) { const newIdx = lessons.findIndex(l => l.id === newId); if (newIdx >= 0) return newIdx; }
-      }
+    const meta = lessons[this.state.lessonIndex];
+    const field = meta && meta.field;
+    if (this.db && meta && meta.id && field) {
+      const newId = this.randomLessonId(this.db, meta.id, field);
+      if (newId != null) { const newIdx = lessons.findIndex(l => l.id === newId); if (newIdx >= 0) return newIdx; }
     }
-    let next; do { next = Math.floor(Math.random() * lessons.length); } while (lessons.length > 1 && next === this.state.lessonIndex);
-    return next;
+    const sameField = lessons.map((ls, idx) => ({ ls, idx })).filter(({ ls }) => ls.field === field);
+    if (sameField.length <= 1) return this.state.lessonIndex;
+    let pick; do { pick = sameField[Math.floor(Math.random() * sameField.length)]; } while (pick.idx === this.state.lessonIndex);
+    return pick.idx;
   }
   advance() {
-    const lesson = this.state.currentLesson;
-    if (!lesson) return;
-    if (this.state.revealed < lesson.steps.length) this.setState(s => ({ revealed: s.revealed + 1 }), () => this.maybeSpeak());
+    if (this.state.screen !== 'practice') return;
+    const steps = this._steps(this.state.lessonIndex);
+    if (this.state.revealed < steps.length) this.setState(s => ({ revealed: s.revealed + 1 }), () => this.maybeSpeak());
     else this.startLesson(this.pickRandomLesson());
   }
   toggleAuto() { this.setState(s => ({ auto: s.auto === null ? !(this.props.autoSpeak ?? true) : !s.auto })); }
@@ -355,40 +443,92 @@ class Component extends DCLogic {
       speechSynthesis.speak(u);
     } catch (e) {}
   }
-  currentText() { const l = this.state.currentLesson; return l ? l.steps.slice(0, this.state.revealed).map(s => s.text).join(' ') : ''; }
+  currentText() { return this._steps(this.state.lessonIndex).slice(0, this.state.revealed).map(s => s.text).join(' '); }
   speakNow() { this.speak(this.currentText()); }
   maybeSpeak() { if (this.autoOn()) this.speak(this.currentText()); }
 
-  // ---- LLM pronunciation (IPA) lookup ----
+  // ---- Dictionary lookup ----
+  clearDictCache() { this._dictCache = {}; try { localStorage.removeItem('sf_dict_cache'); } catch (_) {} this.forceUpdate(); this.showToast('Cache cleared'); }
   openSettings() { this.setState({ showSettings: true }); }
   closeSettings() { this.setState({ showSettings: false }); }
   setLlm(key, val) { this.setState(s => { const llm = { ...s.llm, [key]: val }; try { localStorage.setItem('sf_llm_cfg', JSON.stringify(llm)); } catch (e) {} return { llm }; }); }
+  showToast(msg) { this.setState({ toast: msg }); clearTimeout(this._toastTimer); this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2200); }
   closeLookup() { this.setState({ lookup: null }); }
-  cleanIPA(s) { s = (s || '').trim(); const m = s.match(/\/[^\/\n]+\//); if (m) return m[0]; s = s.replace(/^["'`\s]+|["'`\s]+$/g, ''); return s.startsWith('/') ? s : '/' + s.replace(/^\/|\/$/g, '') + '/'; }
-  async fetchIPA(word) {
-    const prompt = 'Give the American English IPA phonetic transcription for: "' + word + '". Respond with ONLY the IPA between slashes, for example /h\u0259\u02c8lo\u028a/. No other text, no explanation.';
-    const cfg = this.state.llm || {};
-    if (cfg.baseUrl && cfg.apiKey) {
-      const url = cfg.baseUrl.replace(/\/+$/, '') + '/chat/completions';
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.apiKey }, body: JSON.stringify({ model: cfg.model || 'gpt-4o-mini', temperature: 0, messages: [{ role: 'user', content: prompt }] }) });
-      if (!r.ok) throw new Error('API error ' + r.status);
-      const j = await r.json();
-      return this.cleanIPA((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '');
-    }
-    if (window.claude && window.claude.complete) { return this.cleanIPA(await window.claude.complete(prompt) || ''); }
-    throw new Error('No LLM configured \u2014 open \u2699 Settings');
+  toggleVocab() { this.setState(s => ({ showVocab: !s.showVocab })); }
+  closeVocab() { this.setState({ showVocab: false }); }
+  saveWord() {
+    const lk = this.state.lookup;
+    if (!lk || !lk.word || lk.loading) return;
+    const wasSaved = this.state.savedWords.some(w => w.word === lk.word);
+    this.setState(s => {
+      const exists = s.savedWords.some(w => w.word === lk.word);
+      const savedWords = exists
+        ? s.savedWords.filter(w => w.word !== lk.word)
+        : [{ word: lk.word, ipa: lk.ipa, pos: lk.pos || '', vi: lk.vi || '', def: lk.def || '' }, ...s.savedWords];
+      try { localStorage.setItem('sf_vocab', JSON.stringify(savedWords)); } catch (e) {}
+      return { savedWords };
+    });
+    this.showToast(wasSaved ? 'Removed from vocabulary' : '★ Word saved!');
   }
-  async lookupIPA(raw) {
+  removeWord(word) {
+    this.setState(s => {
+      const savedWords = s.savedWords.filter(w => w.word !== word);
+      try { localStorage.setItem('sf_vocab', JSON.stringify(savedWords)); } catch (e) {}
+      return { savedWords };
+    });
+  }
+  cleanIPA(s) { s = (s || '').trim(); const m = s.match(/\/[^\/\n]+\//); if (m) return m[0]; s = s.replace(/^["'`\s]+|["'`\s]+$/g, ''); return s.startsWith('/') ? s : '/' + s.replace(/^\/|\/$/g, '') + '/'; }
+  async fetchWordInfo(word, sentence, nearPhrase) {
+    const cfg = this.state.llm || {};
+    const apiKey = (cfg.apiKey || '').trim();
+    const baseUrl = (cfg.baseUrl || '').trim();
+    if (!baseUrl || !apiKey) throw new Error('LLM not configured — open ⚙ Settings');
+    const prompt = 'The user clicked "' + word + '" in the phrase: "' + (nearPhrase || word) + '"\nFull sentence context: "' + (sentence || nearPhrase || word) + '"\n\nStep 1: Identify the most meaningful lexical unit containing "' + word + '" — could be a single word, phrasal verb, collocation, or fixed expression.\nStep 2: Return a mini dictionary entry for that unit.\n\nReturn ONLY valid JSON, no markdown:\n{"unit":"exact lexical unit (e.g. phrasal verb or collocation, not just the clicked word)","ipa":"/AmE IPA/","pos":"noun|verb|phrasal verb|collocation|adj|adv|etc","vi":"Vietnamese meaning in this context","def":"concise English definition (1 sentence)","ex":"short natural example sentence"}';
+    const url = baseUrl.replace(/\/+$/, '') + '/chat/completions';
+    const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey, 'HTTP-Referer': location.origin || 'https://speakflow.app', 'X-Title': 'SpeakFlow' };
+    const body = { model: cfg.model || 'google/gemini-2.5-flash-lite', messages: [{ role: 'user', content: prompt }] };
+    const r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!r.ok) { let msg = 'API error ' + r.status; try { const e = await r.json(); msg += ': ' + ((e.error && (e.error.message || e.error.code)) || ''); } catch (_) {} throw new Error(msg); }
+    const j = await r.json();
+    const raw = ((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '').trim();
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Invalid response from LLM');
+    let p; try { p = JSON.parse(m[0]); } catch (_) { throw new Error('Could not parse LLM response'); }
+    const ipa = this.cleanIPA(p.ipa || '');
+    if (!ipa) throw new Error('No IPA in response');
+    const unit = (p.unit || word).trim();
+    return { unit, ipa, pos: (p.pos || '').trim(), vi: (p.vi || '').trim(), def: (p.def || '').trim(), ex: (p.ex || '').trim() };
+  }
+  async lookupIPA(raw, nearPhrase) {
     const word = (raw || '').trim();
     if (!word) return;
     this.speak(word);
-    if (this.state.ipaCache[word]) { this.setState({ lookup: { word, ipa: this.state.ipaCache[word], loading: false, error: '' } }); return; }
-    this.setState({ lookup: { word, ipa: '', loading: true, error: '' } });
+    const TTL = 7 * 24 * 60 * 60 * 1000;
+    const hit = this._dictCache[word] || this._dictCache[word.toLowerCase()];
+    const autoSave = (unit, ipa, pos, vi, def) => {
+      this.setState(s => {
+        if (s.savedWords.some(w => w.word === unit)) return null;
+        const savedWords = [{ word: unit, ipa, pos: pos || '', vi: vi || '', def: def || '' }, ...s.savedWords];
+        try { localStorage.setItem('sf_vocab', JSON.stringify(savedWords)); } catch (_) {}
+        return { savedWords };
+      });
+    };
+    if (hit && (Date.now() - (hit.ts || 0)) < TTL) {
+      const { unit, ipa, pos, vi, def, ex } = hit;
+      const displayWord = unit || word;
+      this.setState({ lookup: { word: displayWord, ipa, pos, vi, def, ex, loading: false, error: '' } });
+      autoSave(displayWord, ipa, pos, vi, def); return;
+    }
+    this.setState({ lookup: { word, ipa: '', pos: '', vi: '', def: '', ex: '', loading: true, error: '' } });
     try {
-      const ipa = await this.fetchIPA(word);
-      this.setState(s => ({ ipaCache: { ...s.ipaCache, [word]: ipa }, lookup: { word, ipa, loading: false, error: '' } }));
+      const { unit, ipa, pos, vi, def, ex } = await this.fetchWordInfo(word, this.currentText(), nearPhrase);
+      const cacheKey = unit || word;
+      this._dictCache[cacheKey] = { unit: cacheKey, ipa, pos, vi, def, ex, ts: Date.now() };
+      try { localStorage.setItem('sf_dict_cache', JSON.stringify(this._dictCache)); } catch (_) {}
+      this.setState({ lookup: { word: cacheKey, ipa, pos, vi, def, ex, loading: false, error: '' } });
+      autoSave(cacheKey, ipa, pos, vi, def);
     } catch (e) {
-      this.setState({ lookup: { word, ipa: '', loading: false, error: (e && e.message) || 'Lookup failed' } });
+      this.setState({ lookup: { word, ipa: '', pos: '', vi: '', def: '', ex: '', loading: false, error: (e && e.message) || 'Lookup failed' } });
     }
   }
 
@@ -398,10 +538,13 @@ class Component extends DCLogic {
     const dark = this.themeNow() === 'dark';
     const c = dark ? TOKENS.dark : TOKENS.light;
     const D = this.data();
-    const lesson = this.state.currentLesson || { title: '', field: '', fw: '', steps: [], icon: '' };
+    const lessonIdx = this.state.lessonIndex;
+    const lessonMeta = D[lessonIdx] || { title: '', field: '', fw: '', icon: '' };
+    const lessonSteps = this.state.screen === 'practice' ? this._steps(lessonIdx) : [];
+    const lesson = { ...lessonMeta, steps: lessonSteps };
     const rev = this.state.revealed;
-    const total = lesson.steps.length;
-    const complete = rev >= total;
+    const total = lessonSteps.length;
+    const complete = total > 0 && rev >= total;
     const fwMeta = (fw) => fw === '5W1H' ? { color: '#3b82f6', nameVi: 'Mô tả · Kể · Giải thích' } : { color: '#a855f7', nameVi: 'Quan điểm · Tranh luận' };
     const fieldOf = (k) => FIELDS.find(f => f.key === k) || { icon: '📁', en: k, vi: k };
 
@@ -413,10 +556,12 @@ class Component extends DCLogic {
     };
 
     // ---- search + group ----
+    const ready = this.state.dbReady;
     const q = this.state.query.trim().toLowerCase();
     const cardOf = (ls, idx) => {
       const m = fwMeta(ls.fw);
-      return { title: ls.title, titleVi: showVi ? ls.titleVi : '', fw: ls.fw, fwVi: m.nameVi, icon: ls.icon, stepLabel: (ls.stepCount != null ? ls.stepCount : (ls.steps ? ls.steps.length : 0)) + ' steps',
+      const phraseCount = ls.stepCount != null ? ls.stepCount : (ls.steps ? ls.steps.length : null);
+      return { title: ls.title, titleVi: showVi ? ls.titleVi : '', fw: ls.fw, fwVi: m.nameVi, icon: ls.icon, stepLabel: phraseCount != null ? phraseCount + ' phrases' : '…',
         badgeStyle: { display: 'inline-block', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '12px', letterSpacing: '1px', padding: '4px 10px', borderRadius: '999px', color: m.color, background: this.rgba(m.color, 0.16), border: '1px solid ' + this.rgba(m.color, 0.4) },
         start: () => this.startLesson(idx) };
     };
@@ -431,8 +576,10 @@ class Component extends DCLogic {
           const hay = (ls.title + ' ' + ls.titleVi + ' ' + f.en + ' ' + f.vi + ' ' + ls.fw).toLowerCase();
           if (!hay.includes(q)) return;
         }
-        matches.push({ ls, idx });
+        if (!(idx in this._weights)) this._weights[idx] = Math.random();
+        matches.push({ ls, idx, w: this._weights[idx] });
       });
+      matches.sort((a, b) => a.w - b.w);
       const total = matches.length;
       if (!total) return;
       const pageCount = Math.ceil(total / PAGE_SIZE);
@@ -456,7 +603,7 @@ class Component extends DCLogic {
       const wrapStyle = { color: isCur ? c.cur : 'var(--tx)', fontWeight: 400, borderBottom: '2.5px dotted ' + st.color, paddingBottom: '3px', marginRight: '0.32em', transition: 'color .25s ease' };
       const words = st.text.split(/\s+/).filter(Boolean).map(w => ({
         text: w + ' ',
-        click: (e) => { e.stopPropagation(); this.lookupIPA(w.replace(/[.,!?;:"'\u201c\u201d]/g, '')); },
+        click: (e) => { e.stopPropagation(); this.lookupIPA(w.replace(/[.,!?;:"'\u201c\u201d]/g, ''), st.text); },
         style: { cursor: 'pointer', borderRadius: '6px', padding: '0 1px', transition: 'background .15s ease' },
       }));
       return { wrapStyle, words };
@@ -476,17 +623,16 @@ class Component extends DCLogic {
       const state = idx < rev - 1 ? 'done' : idx === rev - 1 ? 'current' : 'pending';
       const base = { flex: '0 0 auto', minWidth: '108px', borderRadius: '15px', padding: '11px 14px', transition: 'all .25s ease' };
       let style, icon, iconStyle;
-      if (state === 'done') { style = { ...base, background: this.rgba(st.color, dark ? 0.14 : 0.12), border: '1px solid ' + this.rgba(st.color, 0.42), color: 'var(--tx)' }; icon = '✓'; iconStyle = { color: st.color, fontWeight: 700 }; }
-      else if (state === 'current') { style = { ...base, background: st.color, border: '1px solid ' + st.color, color: '#0a0a0b', animation: 'sfglow 1.8s ease infinite, sfpop .3s ease' }; icon = '▶'; iconStyle = { color: '#0a0a0b' }; }
-      else { style = { ...base, background: 'var(--pend-bg)', border: '1px solid var(--pend-bd)', color: 'var(--pend-tx)' }; icon = '○'; iconStyle = { color: 'var(--pend-tx)' }; }
-      return { label: st.label, labelVi: showVi ? st.labelVi : '', icon, iconStyle, style };
+      if (state === 'done') { style = { ...base, cursor: 'pointer', background: this.rgba(st.color, dark ? 0.14 : 0.12), border: '1px solid ' + this.rgba(st.color, 0.42), color: 'var(--tx)' }; icon = '✓'; iconStyle = { color: st.color, fontWeight: 700 }; }
+      else if (state === 'current') { style = { ...base, cursor: 'pointer', background: st.color, border: '1px solid ' + st.color, color: '#0a0a0b', animation: 'sfglow 1.8s ease infinite, sfpop .3s ease' }; icon = '▶'; iconStyle = { color: '#0a0a0b' }; }
+      else { style = { ...base, cursor: 'pointer', background: 'var(--pend-bg)', border: '1px solid var(--pend-bd)', color: 'var(--pend-tx)' }; icon = '○'; iconStyle = { color: 'var(--pend-tx)' }; }
+      return { label: st.label, labelVi: showVi ? st.labelVi : '', icon, iconStyle, style, click: () => this.setState({ revealed: idx + 1 }, () => this.maybeSpeak()) };
     });
 
     const cur = lesson.steps[rev - 1];
     const auto = this.autoOn();
     const fld = fieldOf(lesson.field);
-    const srcBadge = this.state.dbSource === 'file' ? '● lessons.db' : this.state.dbSource === 'memory' ? '● SQLite · mem' : '○ JS fallback';
-    const ready = this.state.dbReady;
+    const srcBadge = this.state.dbSource === 'file' ? '● lessons.db' : this.state.dbSource === 'memory' ? '● SQLite · mem' : this.state.dbSource === 'js' ? '● lessons.js' : '○ JS fallback';
     return {
       rootStyle,
       isHome: this.state.screen === 'home', isPractice: this.state.screen === 'practice',
@@ -501,12 +647,23 @@ class Component extends DCLogic {
       stepCounter: 'Phrase ' + rev + ' / ' + total,
       fullVi: lesson.steps.map(s => s.vi).join(' '),
       hasLookup: !!lk, lookupWord: lk ? lk.word : '', lookupIpa,
+      lookupPos: lk ? (lk.pos || '') : '',
+      lookupVi: lk ? (lk.vi || '') : '',
+      lookupDef: lk ? (lk.def || '') : '',
+      lookupEx: lk ? (lk.ex || '') : '',
       lookupError: lk ? (lk.error || '') : '',
       lookupStyle: { color: lk && lk.loading ? 'var(--dim)' : 'var(--tx)' },
       speakLookup: () => { if (lk) this.speak(lk.word); }, closeLookup: () => this.closeLookup(),
+      lookupSaved: lk ? this.state.savedWords.some(w => w.word === lk.word) : false,
+      saveWord: () => this.saveWord(),
+      showVocab: this.state.showVocab, toggleVocab: () => this.toggleVocab(), closeVocab: () => this.closeVocab(),
+      vocabCount: this.state.savedWords.length,
+      savedWords: this.state.savedWords.map(w => ({ ...w, remove: () => this.removeWord(w.word), speak: () => this.speak(w.word) })),
       showSettings: this.state.showSettings, openSettings: () => this.openSettings(), closeSettings: () => this.closeSettings(), stop: (e) => e.stopPropagation(),
+      cacheCount: Object.keys(this._dictCache || {}).length, clearDictCache: () => this.clearDictCache(),
       llmBaseUrl: this.state.llm.baseUrl, llmApiKey: this.state.llm.apiKey, llmModel: this.state.llm.model,
       setLlmBase: (e) => this.setLlm('baseUrl', e.target.value), setLlmKey: (e) => this.setLlm('apiKey', e.target.value), setLlmModel: (e) => this.setLlm('model', e.target.value),
+      toast: this.state.toast,
       isComplete: complete, showPrompt: !complete,
       currentLabel: cur ? cur.label : '', currentLabelVi: showVi && cur ? '· ' + cur.labelVi : '', currentVi: showVi && cur ? cur.vi : '',
       promptDot: { width: '11px', height: '11px', borderRadius: '999px', flex: '0 0 auto', background: cur ? cur.color : accent, boxShadow: '0 0 0 4px ' + this.rgba(cur ? cur.color : accent, 0.2) },
@@ -514,7 +671,9 @@ class Component extends DCLogic {
       nextBtnStyle: { flex: 1, cursor: 'pointer', border: 'none', borderRadius: '16px', padding: '15px 18px', fontFamily: "'Fredoka'", fontWeight: 700, fontSize: '16px', color: '#0a0a0b', background: complete ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,' + accent + ',' + accent + ')', boxShadow: '0 10px 26px -10px ' + this.rgba(complete ? '#22c55e' : accent, 0.7) },
       autoLabel: auto ? '🔁 Auto' : '⏸ Auto',
       autoBtnStyle: { cursor: 'pointer', borderRadius: '16px', padding: '14px 16px', fontFamily: "'Fredoka'", fontWeight: 600, fontSize: '14px', color: auto ? '#0a0a0b' : 'var(--tx)', background: auto ? accent : 'var(--nbg)', border: '1px solid ' + (auto ? accent : 'var(--nbd)') },
-      tapAdvance: (e) => { if (e.target.closest('button')) return; this.advance(); },
+      lessonFontSize: this.state.fontSize || 28,
+      fontSizeInc: () => this.setState(s => ({ fontSize: Math.min(52, (s.fontSize || 28) + 2) })),
+      fontSizeDec: () => this.setState(s => ({ fontSize: Math.max(14, (s.fontSize || 28) - 2) })),
       advance: () => this.advance(), restart: () => this.restart(), goHome: () => this.goHome(),
       speakNow: () => this.speakNow(), toggleAuto: () => this.toggleAuto(),
       toggleTheme: () => this.toggleTheme(), onSearch: (e) => this.onSearch(e), clearSearch: () => this.clearSearch(),
